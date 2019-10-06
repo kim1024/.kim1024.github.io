@@ -3,7 +3,7 @@
   <entry>
     <title><![CDATA[CentOS安装Jupyter-Notebook]]></title>
     <url>%2F2019%2F10%2F06%2Fcentos-install-jupyter.html</url>
-    <content type="text"><![CDATA[安装依赖1sudo yum install openssl* bzip2 expat zlib* sqlite* libffi* libssl* wget gcc make cmake automake -y 下载、编译、安装Python12345678910111213141516171819# download python sourcewget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz# untartar xf Python-3.7.4.tgzcd Python-3.7.4 # make.configure --prefix=/opt/python3 --with-sslvi setup.py## addsqlite_inc_path=[&apos;/usr/bin/sqlite3&apos;,]## makemake -j20# installmake install# configure profilevi /etc/profile## addexport PATH=$&#123;PATH&#125;:/opt/python3/binsource /etc/profile &lt;?–more–&gt; 安装、配置Jupyter Notebook1234567891011121314151617181920212223242526# install jupyter by pippip3 install jupyter# configure jupyter## get passwd sha1python3 &gt;&gt;&gt; from notebook.auth import passwd&gt;&gt;&gt; passwd()## copy passwd sha1## get jupyter configure location jupyter notebook --generate-config## create certfile and keyfilemkdir ~/key &amp;&amp; cd ~/keyopenssl req -x509 -nodes -days 365 -newkey rsa:1024 -keyout j.key -out j.pem## configure jupyter vi ~/.jupyter/jupyter_notebook_conf.py### change passwd use pastec.NotebookApp.password=&apos;passwd&apos; ### change certfile and keyfile.NotebookApp.certfile = &apos;/home/user/key/j.pem&apos;c.NotebookApp.keyfile = &apos;/home/user/key/j.key&apos;### change listen ip c.NotebookApp.ip = &apos;192.168.0.230&apos;### disable open_browserc.NotebookApp.open_browser=False### change llisten portc.NotebookApp.port = 9088 添加开机启动123456789---jupyter.sh---#!/bin/bash# function: onboot start jupytercd /home/user/code &amp;&amp; jupyter notebook &gt; /dev/null 2&gt;&amp;1 &amp;---rc.local---# addsu - user -c &quot;sh /home/user/jupyter.sh&quot;chmod +x rc.local 添加防火墙端口123sufirewall-cmd --zone=public --add-port=9088/tcp --permanentfirewall-cmd --reload 测试打开浏览器，输入服务器地址https://jupyter:9088]]></content>
+    <content type="text"><![CDATA[安装依赖1sudo yum install openssl* bzip2 expat zlib* sqlite* libffi* libssl* wget gcc make cmake automake -y 下载、编译、安装Python12345678910111213141516171819# download python sourcewget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz# untartar xf Python-3.7.4.tgzcd Python-3.7.4 # make.configure --prefix=/opt/python3 --with-sslvi setup.py## addsqlite_inc_path=[&apos;/usr/bin/sqlite3&apos;,]## makemake -j20# installmake install# configure profilevi /etc/profile## addexport PATH=$&#123;PATH&#125;:/opt/python3/binsource /etc/profile 安装、配置Jupyter Notebook1234567891011121314151617181920212223242526# install jupyter by pippip3 install jupyter# configure jupyter## get passwd sha1python3 &gt;&gt;&gt; from notebook.auth import passwd&gt;&gt;&gt; passwd()## copy passwd sha1## get jupyter configure location jupyter notebook --generate-config## create certfile and keyfilemkdir ~/key &amp;&amp; cd ~/keyopenssl req -x509 -nodes -days 365 -newkey rsa:1024 -keyout j.key -out j.pem## configure jupyter vi ~/.jupyter/jupyter_notebook_conf.py### change passwd use pastec.NotebookApp.password=&apos;passwd&apos; ### change certfile and keyfile.NotebookApp.certfile = &apos;/home/user/key/j.pem&apos;c.NotebookApp.keyfile = &apos;/home/user/key/j.key&apos;### change listen ip c.NotebookApp.ip = &apos;192.168.0.230&apos;### disable open_browserc.NotebookApp.open_browser=False### change llisten portc.NotebookApp.port = 9088 添加开机启动123456789---jupyter.sh---#!/bin/bash# function: onboot start jupytercd /home/user/code &amp;&amp; jupyter notebook &gt; /dev/null 2&gt;&amp;1 &amp;---rc.local---# addsu - user -c &quot;sh /home/user/jupyter.sh&quot;chmod +x rc.local 添加防火墙端口123sufirewall-cmd --zone=public --add-port=9088/tcp --permanentfirewall-cmd --reload 测试打开浏览器，输入服务器地址https://jupyter:9088]]></content>
       <categories>
         <category>Python</category>
         <category>jupyter</category>
@@ -688,8 +688,8 @@
         <category>高可用</category>
       </categories>
       <tags>
-        <tag>keepalived</tag>
         <tag>Mysql</tag>
+        <tag>keepalived</tag>
         <tag>高可用</tag>
         <tag>mha</tag>
         <tag>haproxy</tag>
@@ -717,9 +717,9 @@
         <category>高可用</category>
       </categories>
       <tags>
+        <tag>Mysql</tag>
         <tag>keepalived</tag>
         <tag>集群</tag>
-        <tag>Mysql</tag>
         <tag>MHA</tag>
       </tags>
   </entry>
