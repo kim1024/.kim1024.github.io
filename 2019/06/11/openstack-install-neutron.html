@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="控制节点安装条件 数据库 1234567# loginmysql -u root# create databasecreate database neutron;# grant privilegegrant all privileges on neutron.* to &amp;apos;nt_db&amp;apos;@&amp;apos;localhost&amp;apos; identified by &amp;apos;passw">
+<meta name="keywords" content="OpenStack,neutron">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CentOS部署OpenStack过程-网络服务">
+<meta property="og:url" content="https://kim1024.github.io/2019/06/11/openstack-install-neutron.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="控制节点安装条件 数据库 1234567# loginmysql -u root# create databasecreate database neutron;# grant privilegegrant all privileges on neutron.* to &amp;apos;nt_db&amp;apos;@&amp;apos;localhost&amp;apos; identified by &amp;apos;passw">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s2.ax1x.com/2019/06/11/VgpQZ6.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.674Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CentOS部署OpenStack过程-网络服务">
+<meta name="twitter:description" content="控制节点安装条件 数据库 1234567# loginmysql -u root# create databasecreate database neutron;# grant privilegegrant all privileges on neutron.* to &amp;apos;nt_db&amp;apos;@&amp;apos;localhost&amp;apos; identified by &amp;apos;passw">
+<meta name="twitter:image" content="https://s2.ax1x.com/2019/06/11/VgpQZ6.png">
+  <link rel="canonical" href="https://kim1024.github.io/2019/06/11/openstack-install-neutron">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>CentOS部署OpenStack过程-网络服务 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2019/06/11/openstack-install-neutron.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">CentOS部署OpenStack过程-网络服务
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-06-11 16:03:46" itemprop="dateCreated datePublished" datetime="2019-06-11T16:03:46+08:00">2019-06-11</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/OpenStack/" itemprop="url" rel="index"><span itemprop="name">OpenStack</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2019/06/11/openstack-install-neutron.html" class="post-meta-item leancloud_visitors" data-flag-title="CentOS部署OpenStack过程-网络服务" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="控制节点"><a href="#控制节点" class="headerlink" title="控制节点"></a>控制节点</h2><h3 id="安装条件"><a href="#安装条件" class="headerlink" title="安装条件"></a>安装条件</h3><ol>
+<li><p>数据库</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># login</span><br><span class="line">mysql -u root</span><br><span class="line"># create database</span><br><span class="line">create database neutron;</span><br><span class="line"># grant privilege</span><br><span class="line">grant all privileges on neutron.* to &apos;nt_db&apos;@&apos;localhost&apos; identified by &apos;passwd&apos;;</span><br><span class="line">grant all privileges on neutron.* to &apos;nt_db&apos;@&apos;192.168.122.%&apos; identified by &apos;passwd&apos;;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建用户</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># create user</span><br><span class="line">openstack user create \</span><br><span class="line">--domain default \</span><br><span class="line">--password-prompt neutron</span><br><span class="line"># create role</span><br><span class="line">openstack role add --project service --user neutron admin</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<a id="more"></a>
+<ol start="3">
+<li><p>创建服务实体</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">openstack service create \</span><br><span class="line">--name neutron \</span><br><span class="line">--description &quot;OpenStack Networking&quot; network</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建endpoint</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># create public endpoint</span><br><span class="line">openstack endpoint create \</span><br><span class="line">--region RegionOne \</span><br><span class="line">network public http://ops-cont:9696</span><br><span class="line"># create internal admin endpoint like public</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="创建私有网络"><a href="#创建私有网络" class="headerlink" title="创建私有网络"></a>创建私有网络</h3><ol>
+<li>安装组件<br><code>yum install openstack-neutron openstack-neutron-ml2 openstack-neutron-linuxbridge ebtables -y</code></li>
+<li><p>配置组件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/neutron/neutron.conf</span><br><span class="line"># configure database in [database]</span><br><span class="line">connection=mysql+pymysql://nt_db:db_passwd@ops-cont/neutron</span><br><span class="line"># configure ml2 plugin、rabbit、keystone_authtoken in [DEFAULT]</span><br><span class="line">core_plugin=ml2</span><br><span class="line">service_plugins=router</span><br><span class="line">allow_overlapping_ips=True</span><br><span class="line">rpc_backend=rabbit</span><br><span class="line">auth_strategy=keystone</span><br><span class="line">notify_nova_on_port_status_changes=True</span><br><span class="line">notify_nova_on_port_data_changes=True</span><br><span class="line"># configure  [oslo_messaging_rabbit]</span><br><span class="line">[oslo_messaging_rabbit]</span><br><span class="line">rabbit_host=ops-cont</span><br><span class="line">rabbit_userid=openstack</span><br><span class="line">rabbit_password=passwd</span><br><span class="line"># configure keystone_auth in [keystone_authtoken]</span><br><span class="line">auth_uri=http://ops-cont:5000</span><br><span class="line">auth_url=http://ops-cont:35357</span><br><span class="line">memcached_servers=ops-cont:11211</span><br><span class="line">auth_type=password</span><br><span class="line">project_domain_name=default</span><br><span class="line">user_domain_name=default</span><br><span class="line">project_name=service</span><br><span class="line">username=neutron</span><br><span class="line">password=passwd</span><br><span class="line"># configure nova in [nova]</span><br><span class="line">auth_url=http://ops-cont:35357</span><br><span class="line">auth_type=password</span><br><span class="line">region_name=RegionOne</span><br><span class="line">project_domain_name=default</span><br><span class="line">user_domain_name=default</span><br><span class="line">project_name=service</span><br><span class="line">username=nova</span><br><span class="line">password=passwd</span><br><span class="line"># configure lock path in [oslo_concurrency]</span><br><span class="line">lock_path=/var/lib/neutron/tmp</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>配置ml2插件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/neutron/plugins/ml2/ml2.conf.ini</span><br><span class="line"># enable flat,vlan,vxlan in [ml2]</span><br><span class="line"># enable linuxbridge l2</span><br><span class="line"># disable other type_drivers</span><br><span class="line">[ml2]</span><br><span class="line">type_drivers=flat,vlan,vxlan</span><br><span class="line">tenant_network_types=vxlan</span><br><span class="line">mechanism_drivers=linuxbridge,l2population</span><br><span class="line">extension_drivers=port_security</span><br><span class="line">#configure flat network in [ml2_type_flat]</span><br><span class="line">[ml2_type_flat]</span><br><span class="line">flat_networks=provider</span><br><span class="line"># configure vxlan in [ml2_type_vxlan]</span><br><span class="line">[ml2_type_vxlan]</span><br><span class="line">vni_ranges=1:1000</span><br><span class="line"># enable ipset in [securitygroup]</span><br><span class="line">[securitygroup]</span><br><span class="line">enabled_ipset=true</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>配置linuxbridge代理</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/neutron/plugins/ml2/linuxbridge_agent.ini</span><br><span class="line"># link nic with eth in [linux_bridge]</span><br><span class="line">[linux_bridge]</span><br><span class="line">physical_interface_mappings=provider:eth1</span><br><span class="line"># configure vxlan in [vxlan]</span><br><span class="line">[vxlan]</span><br><span class="line">enable_vxlan=true</span><br><span class="line">local_ip=192.168.122.200</span><br><span class="line">l2_population=true</span><br><span class="line"># configure security in [securitygroup]</span><br><span class="line">[securitygroup]</span><br><span class="line">enable_security_group=true</span><br><span class="line">firewall_driver=neutron.agent.linux.iptables_firewall.IptablesFirewallDriver</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>配置l3代理</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/neutron/l3_agent.ini</span><br><span class="line">[DEFAULT]</span><br><span class="line">interface_driver=neutron.agent.linux.interface.BridgeInterfaceDriver</span><br><span class="line">external_network_bridge=</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>配置DHCP</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/neutron/dhcp_agent.ini</span><br><span class="line">[DEFAULT]</span><br><span class="line">interface_driver=neutron.agent.linux.interface.BridgeInterfaceDriver</span><br><span class="line">dhcp_driver=neutron.agent.linux.dhcp.Dnsmasq</span><br><span class="line">enable_isolated_metadata =true</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="配置元数据代理"><a href="#配置元数据代理" class="headerlink" title="配置元数据代理"></a>配置元数据代理</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/neutron/metadata_agent.ini</span><br><span class="line">[DEFAULT]</span><br><span class="line">nova_metadata_ip=ops-cont</span><br><span class="line">metadata_proxy_shared_secret=passwd</span><br></pre></td></tr></table></figure>
+<h3 id="为计算节点配置网络"><a href="#为计算节点配置网络" class="headerlink" title="为计算节点配置网络"></a>为计算节点配置网络</h3><ol>
+<li><p>配置<code>nova.conf</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/nova/nova.conf</span><br><span class="line">[neutron]</span><br><span class="line">url=http://ops-cont:9696</span><br><span class="line">auth_url=http://ops-cont:35357</span><br><span class="line">auth_type=password</span><br><span class="line">project_domain_name=default</span><br><span class="line">user_domain_name=default</span><br><span class="line">region_name=RegionOne</span><br><span class="line">project_name=service</span><br><span class="line">username=neutron</span><br><span class="line">password=passwd</span><br><span class="line">service_metadata_proxy=true</span><br><span class="line">metadata_proxy_shared_secret=passwd</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建1个链接<br><code>ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini</code></p>
+</li>
+<li>同步数据库<br><code>su -c /bin/sh -c &quot;neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/nemutron/plugins/ml2/ml2_conf.ini upgrade head&quot; neutron</code></li>
+<li>重启api服务<br><code>systemctl restart openstack-nova-api</code></li>
+<li>启动网络服务</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl start neutron-server neutron-linuxbridge-agent neutron-dhcp-agent neutron-metadata-agent neutron-l3-agent</span><br><span class="line">systemctl enable neutron-server neutron-linuxbridge-agent neutron-dhcp-agent neutron-metadata-agent neutron-l3-agent</span><br></pre></td></tr></table></figure>
+<h3 id="验证操作"><a href="#验证操作" class="headerlink" title="验证操作"></a>验证操作</h3><p>在计算节点中的操作完成后，在控制节点中执行验证操作<code>neutron ext-list</code> <code>neutron agent-list</code>,输出结果应该包含控制节点上4个代理和每个计算节点上1个代理<br><img src="https://s2.ax1x.com/2019/06/11/VgpQZ6.png" alt="neutron-agent-list"></p>
+<h2 id="计算节点"><a href="#计算节点" class="headerlink" title="计算节点"></a>计算节点</h2><ol>
+<li>安装组件<br><code>yum install openstack-neutron-linuxbridge ebtables ipset -y</code></li>
+<li><p>配置组件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/neutron/neutron.conf</span><br><span class="line"># disable all connection in [database]</span><br><span class="line"># configure rabbit in [DEFAULT] [oslo_messaging_rabbit]</span><br><span class="line"># configure auth</span><br><span class="line">[DEFAULT]</span><br><span class="line">rpc_backend=rabbit</span><br><span class="line">auth_strategy=keystone</span><br><span class="line">[oslo_messaging_rabbit]</span><br><span class="line">rabbit_host=ops-cont</span><br><span class="line">rabbit_userid=openstack</span><br><span class="line">rabbit_password=passwd</span><br><span class="line">[keystone_authtoken]</span><br><span class="line">auth_uri=http://ops-cont:5000</span><br><span class="line">auth_url=http://ops-cont:35357</span><br><span class="line">memcached_servers=ops-cont:11211</span><br><span class="line">auth_type=password</span><br><span class="line">project_domain_name=default</span><br><span class="line">user_domain_name=default</span><br><span class="line">region_name=RegionOne</span><br><span class="line">project_name=service</span><br><span class="line">username=neutron</span><br><span class="line">password=passwd</span><br><span class="line">[oslo_concurrency]</span><br><span class="line">lock_path=/var/lib/neutron/tmp</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>为计算节点配置网络服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/nova/nova.conf</span><br><span class="line">[neutron]</span><br><span class="line">url=http://ops-cont:9696</span><br><span class="line">auth_url=http://ops-cont:35357</span><br><span class="line">auth_type=password</span><br><span class="line">projrct_domain_name=default</span><br><span class="line">user_domain_name=default</span><br><span class="line">region_name=RegionOne</span><br><span class="line">project_name=service</span><br><span class="line">username=neutron</span><br><span class="line">password=passwd</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>重启计算服务<br><code>systemctl restart openstack-nova-compute</code></p>
+</li>
+<li>启动linuxbridge服务<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl start neutron-linuxbridge-agent</span><br><span class="line">systemctl enable neutron-linuxbridge-agent</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h2><p>按照官方文档配置后，在计算节点中启动<code>neutron-linuxbridge-agent</code>服务时，会有如下报错：</p>
+<blockquote>
+<p>neutron.plugins.ml2.drivers.linuxbridge.agent.linuxbridge_neutron_agent [-] Tunneling cannot be enabled without the local_ip bound to an interface on the host. Please configure local_ip None on the host interface to be used for tunneling and restart the agent.</p>
+</blockquote>
+<p>根据提示，需要在<code>/etc/neutron/plugins/ml2/linuxbridge-agent.ini</code>中的<code>[vxlan]</code>部分中添加本地ip地址<code>local_ip=192.168.122.100</code></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://docs.openstack.org/mitaka/zh_CN/install-guide-rdo/neutron-controller-install-option2.html" target="_blank" rel="noopener">为控制节点配置网络</a></li>
+<li><a href="https://docs.openstack.org/mitaka/zh_CN/install-guide-rdo/neutron-compute-install.html" target="_blank" rel="noopener">为计算节点配置网络</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2019/06/11/openstack-install-neutron.html" title="CentOS部署OpenStack过程-网络服务">https://kim1024.github.io/2019/06/11/openstack-install-neutron.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/OpenStack/" rel="tag"><i class="fa fa-tag"></i> OpenStack</a>
+            
+              <a href="/tags/neutron/" rel="tag"><i class="fa fa-tag"></i> neutron</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/06/11/openstack-install-nova-compute.html" rel="next" title="CentOS部署OpenStack过程-计算服务部署">
+                  <i class="fa fa-chevron-left"></i> CentOS部署OpenStack过程-计算服务部署
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/06/11/openstack-install-dashboard.html" rel="prev" title="CentOS部署OpenStack过程-Dashboard">
+                  CentOS部署OpenStack过程-Dashboard <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#控制节点"><span class="nav-number">1.</span> <span class="nav-text">控制节点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装条件"><span class="nav-number">1.1.</span> <span class="nav-text">安装条件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建私有网络"><span class="nav-number">1.2.</span> <span class="nav-text">创建私有网络</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置元数据代理"><span class="nav-number">1.3.</span> <span class="nav-text">配置元数据代理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#为计算节点配置网络"><span class="nav-number">1.4.</span> <span class="nav-text">为计算节点配置网络</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#验证操作"><span class="nav-number">1.5.</span> <span class="nav-text">验证操作</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#计算节点"><span class="nav-number">2.</span> <span class="nav-text">计算节点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#注意"><span class="nav-number">3.</span> <span class="nav-text">注意</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

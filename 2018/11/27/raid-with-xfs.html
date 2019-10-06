@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="概述 磁盘阵列由硬件磁盘阵列(Raid卡)和软件磁盘阵列，RAID可以通过技术，将多个较小的磁盘合成一个较大的磁盘设备;这个磁盘设备除了具有存储功能，还有数据保护功能; 根据RAID等级的不同，常见的可以分为RAID0、RAID1、RAID1+0/0+1、RAID5、RAID6，最为常用的是RAID1+0">
+<meta name="keywords" content="RAID,磁盘阵列,存储">
+<meta property="og:type" content="article">
+<meta property="og:title" content="软件磁盘阵列在xfs文件系统中的使用">
+<meta property="og:url" content="https://kim1024.github.io/2018/11/27/raid-with-xfs.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="概述 磁盘阵列由硬件磁盘阵列(Raid卡)和软件磁盘阵列，RAID可以通过技术，将多个较小的磁盘合成一个较大的磁盘设备;这个磁盘设备除了具有存储功能，还有数据保护功能; 根据RAID等级的不同，常见的可以分为RAID0、RAID1、RAID1+0/0+1、RAID5、RAID6，最为常用的是RAID1+0">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/27/FEJfwq.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/27/FEJ7pF.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/27/FEYSfO.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/27/FEUJAI.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/27/FEyO2R.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/27/FEyXx1.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/27/FE6fFe.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/28/FVY3ZR.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/28/FVYGIx.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/28/FVNuDJ.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.685Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="软件磁盘阵列在xfs文件系统中的使用">
+<meta name="twitter:description" content="概述 磁盘阵列由硬件磁盘阵列(Raid卡)和软件磁盘阵列，RAID可以通过技术，将多个较小的磁盘合成一个较大的磁盘设备;这个磁盘设备除了具有存储功能，还有数据保护功能; 根据RAID等级的不同，常见的可以分为RAID0、RAID1、RAID1+0/0+1、RAID5、RAID6，最为常用的是RAID1+0">
+<meta name="twitter:image" content="https://s1.ax1x.com/2018/11/27/FEJfwq.png">
+  <link rel="canonical" href="https://kim1024.github.io/2018/11/27/raid-with-xfs">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>软件磁盘阵列在xfs文件系统中的使用 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2018/11/27/raid-with-xfs.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">软件磁盘阵列在xfs文件系统中的使用
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2018-11-27 16:45:15" itemprop="dateCreated datePublished" datetime="2018-11-27T16:45:15+08:00">2018-11-27</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/XFS/" itemprop="url" rel="index"><span itemprop="name">XFS</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2018/11/27/raid-with-xfs.html" class="post-meta-item leancloud_visitors" data-flag-title="软件磁盘阵列在xfs文件系统中的使用" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><ul>
+<li>磁盘阵列由硬件磁盘阵列(Raid卡)和软件磁盘阵列，RAID可以通过技术，将多个较小的磁盘合成一个较大的磁盘设备;这个磁盘设备除了具有存储功能，还有数据保护功能;</li>
+<li>根据RAID等级的不同，常见的可以分为RAID0、RAID1、RAID1+0/0+1、RAID5、RAID6，最为常用的是RAID1+0</li>
+</ul>
+<a id="more"></a>
+<h2 id="RAID-0等量模式"><a href="#RAID-0等量模式" class="headerlink" title="RAID-0等量模式"></a>RAID-0等量模式</h2><p><strong>RAID-0等量模式(stripe)性能最佳，数据损坏风险高</strong></p>
+<ul>
+<li>这种模式是使用相同型号与容量的磁盘来组成时，效果较佳;</li>
+<li>工作的原理是：磁盘先切除等量的区块(chunk,一般4k-1M)，当文件要写入RAID时，文件会依据chunk的大小切割好，然后依序放到各个磁盘中;</li>
+<li>每个磁盘会交错的存放数据，文件被写入RAID时，数据会等量的放置在各个磁盘上;因为数据已经被切割并且放置在不同的磁盘中，因此每个磁盘负责的数据量都降低了;</li>
+<li>使用RAID0存储数据，整个可用的磁盘空间受最小的一颗磁盘限制，当容量最小的一颗磁盘已经写满，那么其他磁盘也不再写入数据;同样的，如果其中一颗磁盘损坏，导致数据丢失了一块，那么存放在RAID中的文件将不能读取</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/27/FEJfwq.png" alt="RAID 0"></p>
+<h2 id="RAID-1映射模式"><a href="#RAID-1映射模式" class="headerlink" title="RAID-1映射模式"></a>RAID-1映射模式</h2><p><strong>RAID-1映射模式(mirror)完整备份，数据损坏风险低，磁盘可用容量低</strong> </p>
+<ul>
+<li>RAID-1模式最好使用一模一样的磁盘，磁盘的可用容量由最小的一颗决定;</li>
+<li>工作的原理是：一份数据传送到RAID-1后，在I/O总线后被复制多份到各个磁盘，每个磁盘都存有同一份文件，整个磁盘的可用容量只有50%;由于每个磁盘内都有一个文件的副本，任何一颗磁盘损坏时，数据还是可以完整的保存下来;</li>
+<li>使用软件磁盘阵列时，在大量写入的情况下，RAID-1的写入性能会变得很差;</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/27/FEJ7pF.png" alt="RAID 1"></p>
+<h2 id="RAID-1-0-0-1模式"><a href="#RAID-1-0-0-1模式" class="headerlink" title="RAID 1+0/0+1模式"></a>RAID 1+0/0+1模式</h2><p><strong>RAID 1+0/0+1模式是RAID-0和RAID-1的组合模式</strong>，RAID 1+0就是先让2颗硬盘组成RAID-1模式，这样的设置有2组，再将这2组RAID-1组成一组RAID-0;RAID 0+1就是先组成RAID-0,再组成RAID-1模式。</p>
+<p><img src="https://s1.ax1x.com/2018/11/27/FEYSfO.png" alt="RAID 1+0"></p>
+<h2 id="RAID-5-6"><a href="#RAID-5-6" class="headerlink" title="RAID 5/6"></a>RAID 5/6</h2><p><strong>RAID5需要至少3颗磁盘，类似于RAID0性能和数据备份的均衡考虑</strong>，在每次循环写入的过程中,在每颗磁盘还加入一个同位检查数据，这个数据会记录其他磁盘的备份数据，用于当磁盘损坏时的救援;</p>
+<ul>
+<li>使用RAID5时，每次循环写入时，都会有部分的同位检查码被记录，并且记录的同位检查码每次都记录在不同的磁盘中，因此，任何一个磁盘损坏时都能由其他磁盘的检查码来重建原本磁盘内的数据;</li>
+<li>RAID5的总可用磁盘数量是总磁盘数量减1，默认仅能支持1颗磁盘的损坏情况，当由2颗以上的磁盘出现损坏时，RAID5的数据就损毁了;<br><strong>RAID6是在RAID5的基础上使用2颗磁盘的容量作为检查码的存储，因此整体磁盘就少2颗，允许出错的磁盘数量就可以达到2颗</strong></li>
+</ul>
+<h2 id="预备磁盘"><a href="#预备磁盘" class="headerlink" title="预备磁盘"></a>预备磁盘</h2><ul>
+<li>当磁盘阵列的磁盘损坏时，需要将坏掉的磁盘拔掉，换一颗新的磁盘。更换新的磁盘后并启动磁盘阵列，磁盘阵列会主动开始重建原本坏掉的那颗磁盘上的数据到新的磁盘上。这个过程如果系统支持热插拔，可以直接在线更换，如果不支持需要关机后操作。</li>
+<li>为了让系统可以实时在硬盘损坏时主动重建，就需要预备磁盘的辅助。所谓预备磁盘就是再1颗或多颗没有包含再原本磁盘阵列等级中的磁盘，平时这颗磁盘不会被磁盘阵列所用，当磁盘阵列中由磁盘损坏时，这颗预备磁盘会主动的进入磁盘阵列，并将坏掉的磁盘移除，然后重建数据。</li>
+</ul>
+<h2 id="RAID对比"><a href="#RAID对比" class="headerlink" title="RAID对比"></a>RAID对比</h2><p><img src="https://s1.ax1x.com/2018/11/27/FEUJAI.png" alt="RAID VS"></p>
+<h2 id="软件磁盘阵列"><a href="#软件磁盘阵列" class="headerlink" title="软件磁盘阵列"></a>软件磁盘阵列</h2><ul>
+<li>软件磁盘阵列是使用软件的方式，仿真模拟磁盘阵列的功能，这种方式会损耗系统资源。在CentOS中较为常用的软件磁盘阵列工具是<code>mdadm</code>,该工具以partition或disk为磁盘单位，不需要2颗以上的磁盘，只需要2个以上的分区就可以设计出磁盘阵列。</li>
+</ul>
+<h3 id="设置"><a href="#设置" class="headerlink" title="设置"></a>设置</h3><ul>
+<li>利用4个partition组成RAID5,每个partition为1G，设置1个partition为预备磁盘，chunk设置为256k(一般为64k或512k)，将RAID5设备挂载到/srv/raid上;</li>
+<li>mdadm命令格式<code>mdadm --create /dev/md[0-9] --auto=yes --level=[015] --chunk=nK --raid-devices=n --spare-devices=n /dev/sd{n1,n2,n3}</code><ul>
+<li>‘create’          创建RAID</li>
+<li><code>auto=yes</code>        决定创建后面界的软件磁盘阵列设备</li>
+<li><code>chunk=nK</code>        chunk大小，一般64K、512K</li>
+<li>raid-devices=n`   使用几个磁盘作为软件磁盘阵列设备</li>
+<li><code>spare-devices=n</code> 预备磁盘的数量</li>
+<li><code>level[015]</code>      磁盘阵列的等级，常用的是0,1,5</li>
+<li><code>detail</code>          显示设备的磁盘阵列详细信息</li>
+</ul>
+</li>
+<li><p>利用mdadm创建磁盘阵列</p>
+<ul>
+<li><code>mdam --create /dev/md0 --auto=yes --level=5 --chunk=256K --raid-devices=4 --spare-devices=1 /dev/vda{5,6,7,8,9}</code></li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/27/FEyO2R.png" alt="mdadm-create"></p>
+</li>
+<li><p>查看创建的raid设备信息</p>
+<ul>
+<li><code>mdadm --detail /dev/md0</code> 还可以使用命令<code>cat /proc/mdstat</code></li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/27/FEyXx1.png" alt="mdadm-detail"></p>
+</li>
+<li><p>格式化与挂载RAID</p>
+<ul>
+<li><code>mkfs.xfs -f -d su=256k,sw=3 -r extsize=768k /dev/md0</code><br># su指定chunk的大小，与创建raid时相同，sw指定可用磁盘容量个数(raid共4个，可用的是4-1)，extsize的计算是256k*3</li>
+<li><code>mount /dev/md0 /srv/raid</code></li>
+<li><code>df -Th /srv/raid</code></li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/27/FE6fFe.png" alt="mkfs-mount-df"></p>
+</li>
+</ul>
+<h3 id="RAID的救援"><a href="#RAID的救援" class="headerlink" title="RAID的救援"></a>RAID的救援</h3><ul>
+<li>RAID管理常用的命令<code>mdadm --manage /dev/md[0-9] [--add devices] [--remove devies] [-fail devices]</code><ul>
+<li><code>add</code>     将设备加入到md中</li>
+<li><code>remove</code>  将设备从md中移除</li>
+<li><code>fail</code>    将md中的设备设置为出错状态</li>
+</ul>
+</li>
+<li>写入数据到raid设备md0中<ul>
+<li><code>cp ~/test/* /srv/raid</code></li>
+</ul>
+</li>
+<li>将磁盘设置为错误状态<ul>
+<li><code>mdadm --detail/dev/md0</code> # 查看当前raid设备的信息<br><img src="https://s1.ax1x.com/2018/11/28/FVY3ZR.png" alt="/dev/md0-detail-old"></li>
+<li>目前使用的磁盘是5,6,7,8 ，9号磁盘作为预备磁盘，我们将7号磁盘设置为错误</li>
+<li><code>mdadm --manage /dev/md0 --fail /dev/vda7</code>设置后再查看raid设备的信息，9号预备磁盘已经替换7号磁盘，并重建数据中<br><img src="https://s1.ax1x.com/2018/11/28/FVYGIx.png" alt="/dev/md0-detail-new"></li>
+</ul>
+</li>
+<li>将出错的磁盘移除并加入新的磁盘<ul>
+<li>将7号磁盘从raid设备中移除<ul>
+<li><code>mdadm --manage /dev/md0 --remove /dev/vda7</code></li>
+</ul>
+</li>
+<li>系统关机，将出错的磁盘拔除，并安装新的磁盘替换7号磁盘</li>
+<li>将新加入的磁盘加入到raid设备中<ul>
+<li><code>mdadm --manage /dev/md0 --add /dev/vda7</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="RAID关闭"><a href="#RAID关闭" class="headerlink" title="RAID关闭"></a>RAID关闭</h3><ul>
+<li>获取raid设备的uuid <code>mdadm --detail /dev/md0 | grep -i uuid</code>,从文件夹中卸载设备<code>umount /srv/raid</code></li>
+<li>编辑<code>/etc/fstab</code>文件，将以uuid开头的raid设备相关的注释掉,没有可忽略</li>
+<li>使用dd命令分别将raid设备中的数据覆盖<code>dd if=/dev/zero of=/dev/md0 bs=1M count=63</code></li>
+<li>关闭raid设备<code>mdadm --stop /dev/md0</code></li>
+<li>使用dd命令将磁盘中的数据覆盖或使用fdisk格式化磁盘<br><img src="https://s1.ax1x.com/2018/11/28/FVNuDJ.png" alt="stop raid"></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2018/11/27/raid-with-xfs.html" title="软件磁盘阵列在xfs文件系统中的使用">https://kim1024.github.io/2018/11/27/raid-with-xfs.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/RAID/" rel="tag"><i class="fa fa-tag"></i> RAID</a>
+            
+              <a href="/tags/磁盘阵列/" rel="tag"><i class="fa fa-tag"></i> 磁盘阵列</a>
+            
+              <a href="/tags/存储/" rel="tag"><i class="fa fa-tag"></i> 存储</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2018/11/27/quota-with-xfs.html" rel="next" title="XFS文件系统中quota的使用">
+                  <i class="fa fa-chevron-left"></i> XFS文件系统中quota的使用
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2018/12/03/linux-sys-cmd.html" rel="prev" title="Linux系统资源观察">
+                  Linux系统资源观察 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RAID-0等量模式"><span class="nav-number">2.</span> <span class="nav-text">RAID-0等量模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RAID-1映射模式"><span class="nav-number">3.</span> <span class="nav-text">RAID-1映射模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RAID-1-0-0-1模式"><span class="nav-number">4.</span> <span class="nav-text">RAID 1+0/0+1模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RAID-5-6"><span class="nav-number">5.</span> <span class="nav-text">RAID 5/6</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#预备磁盘"><span class="nav-number">6.</span> <span class="nav-text">预备磁盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RAID对比"><span class="nav-number">7.</span> <span class="nav-text">RAID对比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#软件磁盘阵列"><span class="nav-number">8.</span> <span class="nav-text">软件磁盘阵列</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#设置"><span class="nav-number">8.1.</span> <span class="nav-text">设置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RAID的救援"><span class="nav-number">8.2.</span> <span class="nav-text">RAID的救援</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RAID关闭"><span class="nav-number">8.3.</span> <span class="nav-text">RAID关闭</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

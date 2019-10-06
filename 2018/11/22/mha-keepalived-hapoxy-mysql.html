@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="环境  Mysql  使用Mysql5.7.*版本，在Slave和Master集群中安装   HAproxy  使用HAproxy1.8版本，在CentOS环境中安装，使用单独服务器，以提高性能   Keepalived  使用Keepalived1.3.5版本，在Master和Backup服务器上安装，使用漂移VIP    -MHA  使用mha-mangaer-0.55版本，Manager单独">
+<meta name="keywords" content="keepalived,Mysql,高可用,mha,haproxy">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用HAproxy-Keepalived-MHA搭建高可以用Mysql服务集群">
+<meta property="og:url" content="https://kim1024.github.io/2018/11/22/mha-keepalived-hapoxy-mysql.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="环境  Mysql  使用Mysql5.7.*版本，在Slave和Master集群中安装   HAproxy  使用HAproxy1.8版本，在CentOS环境中安装，使用单独服务器，以提高性能   Keepalived  使用Keepalived1.3.5版本，在Master和Backup服务器上安装，使用漂移VIP    -MHA  使用mha-mangaer-0.55版本，Manager单独">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/22/FPu4nH.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/22/FPGb60.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/22/FPl12V.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/22/FPG7pn.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/22/FPNABV.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/22/FPNqC4.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.683Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用HAproxy-Keepalived-MHA搭建高可以用Mysql服务集群">
+<meta name="twitter:description" content="环境  Mysql  使用Mysql5.7.*版本，在Slave和Master集群中安装   HAproxy  使用HAproxy1.8版本，在CentOS环境中安装，使用单独服务器，以提高性能   Keepalived  使用Keepalived1.3.5版本，在Master和Backup服务器上安装，使用漂移VIP    -MHA  使用mha-mangaer-0.55版本，Manager单独">
+<meta name="twitter:image" content="https://s1.ax1x.com/2018/11/22/FPu4nH.png">
+  <link rel="canonical" href="https://kim1024.github.io/2018/11/22/mha-keepalived-hapoxy-mysql">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>使用HAproxy-Keepalived-MHA搭建高可以用Mysql服务集群 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2018/11/22/mha-keepalived-hapoxy-mysql.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">使用HAproxy-Keepalived-MHA搭建高可以用Mysql服务集群
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2018-11-22 15:24:33" itemprop="dateCreated datePublished" datetime="2018-11-22T15:24:33+08:00">2018-11-22</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Mysql/" itemprop="url" rel="index"><span itemprop="name">Mysql</span></a></span>
+
+                
+                
+                  ，
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Mysql/高可用/" itemprop="url" rel="index"><span itemprop="name">高可用</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2018/11/22/mha-keepalived-hapoxy-mysql.html" class="post-meta-item leancloud_visitors" data-flag-title="使用HAproxy-Keepalived-MHA搭建高可以用Mysql服务集群" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p><img src="https://s1.ax1x.com/2018/11/22/FPu4nH.png" alt="Mysql高可用集群"></p>
+<ul>
+<li><p>Mysql</p>
+<ul>
+<li>使用Mysql5.7.*版本，在Slave和Master集群中安装</li>
+</ul>
+</li>
+<li><p>HAproxy</p>
+<ul>
+<li>使用HAproxy1.8版本，在CentOS环境中安装，使用单独服务器，以提高性能</li>
+</ul>
+</li>
+<li><p>Keepalived</p>
+<ul>
+<li>使用Keepalived1.3.5版本，在Master和Backup服务器上安装，使用漂移VIP</li>
+</ul>
+</li>
+</ul>
+<p>-MHA</p>
+<ul>
+<li>使用mha-mangaer-0.55版本，Manager单独安装服务器，Node安装在Master和Back中</li>
+</ul>
+<a id="more"></a>
+<h2 id="操作"><a href="#操作" class="headerlink" title="操作"></a>操作</h2><h3 id="安装配置"><a href="#安装配置" class="headerlink" title="安装配置"></a>安装配置</h3><ol>
+<li><p>安装Mysql数据库</p>
+<ul>
+<li>分别在slave01-03服务器和master\backup服务器中安装<code>mysql57-community-server</code></li>
+<li>安装步骤：导入mysql repo源，使用<code>yum-config-manager</code>禁用mysql80源,启用mysql57源，然后使用<code>yum install mysql-community-server</code>安装</li>
+</ul>
+</li>
+<li><p>配置数据库主从复制</p>
+<ul>
+<li>master和slave使用异步主从复制，并在slave服务器中设置<code>read_only=1</code> 和 <code>relay_log_opurge=0</code></li>
+<li>master和backup使用<strong>半同步主从复制</strong>，会用到插件<code>rpl_semi_sync_master/slave</code></li>
+<li>在master数据库中授权用户通过服务器haproxy访问的权限</li>
+<li>参考文章:<ol>
+<li><a href="https://kim1024.github.io/2018/11/02/Mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E9%85%8D%E7%BD%AE%E5%BC%82%E6%AD%A5%E5%90%8C%E6%AD%A5%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">Mysql数据库配置异步同步主从复制</a></li>
+<li><a href="https://kim1024.github.io/2018/11/02/Mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E9%85%8D%E7%BD%AE%E5%BC%82%E6%AD%A5%E5%90%8C%E6%AD%A5%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">Mysql数据库配置异步同步主从复制</a></li>
+</ol>
+</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/22/FPGb60.png" alt="master-mysql-configure"></p>
+</li>
+<li><p>安装配置keepalived</p>
+<ul>
+<li>分别在master和backup中安装keepalived，设置漂移VIP地址为<code>192.168.0.110</code>，master和backup的级别、路由id、认证密码相同，state都设置为<strong>BACKUP</strong>,启用非抢夺模式</li>
+<li>首先启动master服务器中的keepalived，再启动backup</li>
+<li>参考文章：<ol>
+<li><a href="https://kim1024.github.io/2018/11/20/Mysql%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84%E4%B9%8Bkeepalived%20and%20MHA/">Mysql高可用架构之keepalived and MHA</a></li>
+</ol>
+</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/22/FPl12V.png" alt="keepalived configure"></p>
+</li>
+<li><p>安装配置MHA</p>
+<ul>
+<li>分别在master，backup和slave中安装MHA-Node</li>
+<li>在mha服务器中安装MHA-Manager，设置配置文件，修改故障转移脚本</li>
+<li>在启用mha之前，使用命令<code>masterha_check_ssh --conf=/etc/masterha/app1.cnf</code>检查ssh信任，使用命令<code>masterha_check_repl --conf=/etc/masterha/app1.cnf</code>检查mysql的主从同步</li>
+<li>mha启用后，使用命令<code>masterha_check_status --conf=/etc/masterha/app1.cnf</code>检查mha的状态</li>
+<li>以daemon的方式启动MHA，使用命令行<code>nohup masterha_manager --conf=/etc/masterha/app1.cnf --remove_dead_master_conf --ignore_last_failover &lt; /dev/null &gt; /var/log/masterha/app1/app1.log 2&gt;&amp;1 &amp;</code></li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/22/FPG7pn.png" alt="mha-manager-configure"></p>
+</li>
+<li><p>安装配置haproxy</p>
+<ul>
+<li>在haproxy服务器上安装haproxy，修改配置文件，启用状态检测</li>
+<li>通过端口分离读写，<code>3306</code>读，<code>3307</code>写</li>
+<li>在启用haproxy之前，可以使用命令<code>haproxy -f /etc/haproxy/haproxy.cfg</code>检查haproxy的配置是否正确</li>
+<li>参考文章：<ol>
+<li><a href="https://kim1024.github.io/2018/11/05/HAProxy%E5%9F%BA%E7%A1%80%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">HAProxy基础学习笔记</a></li>
+</ol>
+</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/22/FPNABV.png" alt="haproxy-configure"></p>
+</li>
+</ol>
+<h2 id="启用"><a href="#启用" class="headerlink" title="启用"></a>启用</h2><ol>
+<li>启用Mysql数据库，检查主从同步复制</li>
+<li>启用master中的keepalived，启用backup中的keepalived</li>
+<li>启用haproxy，检查haproxy的统计信息</li>
+<li>启用MHA-Manager，检查其状态</li>
+</ol>
+<h2 id="读写简单测试"><a href="#读写简单测试" class="headerlink" title="读写简单测试"></a>读写简单测试</h2><ol>
+<li><p>在本地通过client连接Mysql数据库，使用3307段口号</p>
+<ul>
+<li><code>mysql -u root -p -h haproxy -P 3307</code></li>
+</ul>
+</li>
+<li><p>查看Mysql的<code>server_id</code></p>
+<ul>
+<li><code>show global variables like &#39;%server_id%&#39;;</code></li>
+</ul>
+</li>
+<li><p>在本地通过client连接Mysql数据库，使用3306段口号</p>
+<ul>
+<li><code>mysql -u root -p -h haproxy -P 3307</code></li>
+</ul>
+</li>
+<li><p>查看Mysql的<code>server_id</code></p>
+<ul>
+<li>多次执行<code>show global variables like &#39;%server_id%&#39;;</code>查看每次获取的server-id</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/22/FPNqC4.png" alt="rade-show-serverid"></p>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2018/11/22/mha-keepalived-hapoxy-mysql.html" title="使用HAproxy-Keepalived-MHA搭建高可以用Mysql服务集群">https://kim1024.github.io/2018/11/22/mha-keepalived-hapoxy-mysql.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/keepalived/" rel="tag"><i class="fa fa-tag"></i> keepalived</a>
+            
+              <a href="/tags/Mysql/" rel="tag"><i class="fa fa-tag"></i> Mysql</a>
+            
+              <a href="/tags/高可用/" rel="tag"><i class="fa fa-tag"></i> 高可用</a>
+            
+              <a href="/tags/mha/" rel="tag"><i class="fa fa-tag"></i> mha</a>
+            
+              <a href="/tags/haproxy/" rel="tag"><i class="fa fa-tag"></i> haproxy</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2018/11/20/mha-m2s.html" rel="next" title="MHA在线主从切换">
+                  <i class="fa fa-chevron-left"></i> MHA在线主从切换
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2018/11/23/lvm-doc.html" rel="prev" title="LVM基础学习和使用">
+                  LVM基础学习和使用 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#环境"><span class="nav-number">1.</span> <span class="nav-text">环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#操作"><span class="nav-number">2.</span> <span class="nav-text">操作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装配置"><span class="nav-number">2.1.</span> <span class="nav-text">安装配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启用"><span class="nav-number">3.</span> <span class="nav-text">启用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#读写简单测试"><span class="nav-number">4.</span> <span class="nav-text">读写简单测试</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

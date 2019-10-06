@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="目前在CentOS中使用firewalld替代iptables，firewalld是iptables的前段控制器，与iptables的区别是：前者使用区域和服务而不是链式规则，它动态管理规则集，允许更新规则而不破坏现有的会话和连接。firewalld的配置文件主要存放在2个位置：/usr/lib/Firewalld和/etc/firewalld,前者存放的是默认配置，后者存放的是自定义配置。">
+<meta name="keywords" content="firewall-cmd,学习笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CentOS主机防火墙Firewalld学习笔记">
+<meta property="og:url" content="https://kim1024.github.io/2019/01/12/firewall-cmd-learning.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="目前在CentOS中使用firewalld替代iptables，firewalld是iptables的前段控制器，与iptables的区别是：前者使用区域和服务而不是链式规则，它动态管理规则集，允许更新规则而不破坏现有的会话和连接。firewalld的配置文件主要存放在2个位置：/usr/lib/Firewalld和/etc/firewalld,前者存放的是默认配置，后者存放的是自定义配置。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.672Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CentOS主机防火墙Firewalld学习笔记">
+<meta name="twitter:description" content="目前在CentOS中使用firewalld替代iptables，firewalld是iptables的前段控制器，与iptables的区别是：前者使用区域和服务而不是链式规则，它动态管理规则集，允许更新规则而不破坏现有的会话和连接。firewalld的配置文件主要存放在2个位置：/usr/lib/Firewalld和/etc/firewalld,前者存放的是默认配置，后者存放的是自定义配置。">
+  <link rel="canonical" href="https://kim1024.github.io/2019/01/12/firewall-cmd-learning">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>CentOS主机防火墙Firewalld学习笔记 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2019/01/12/firewall-cmd-learning.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">CentOS主机防火墙Firewalld学习笔记
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-01-12 11:25:52" itemprop="dateCreated datePublished" datetime="2019-01-12T11:25:52+08:00">2019-01-12</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2019/01/12/firewall-cmd-learning.html" class="post-meta-item leancloud_visitors" data-flag-title="CentOS主机防火墙Firewalld学习笔记" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>目前在CentOS中使用firewalld替代iptables，firewalld是iptables的前段控制器，与iptables的区别是：前者使用区域和服务而不是链式规则，它动态管理规则集，允许更新规则而不破坏现有的会话和连接。<br>firewalld的配置文件主要存放在2个位置：/usr/lib/Firewalld和/etc/firewalld,前者存放的是默认配置，后者存放的是自定义配置。</p>
+<a id="more"></a>
+<h2 id="基本命令"><a href="#基本命令" class="headerlink" title="基本命令"></a>基本命令</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">systemctl start/stop/enable/disable/status firewalld # 启动/关闭/开机启动/取消开机启动/状态</span><br><span class="line">firewall-cmd --state # 运行状态</span><br><span class="line">firewall-cmd --get-active-zones # 查看被激活的zone</span><br><span class="line">firewall-cmd --get-zones # 查看预设zone</span><br><span class="line">firewall-cmd --get-zone-of-interface=eth0 # 查看接口eth0的zone信息</span><br><span class="line">firewall-cmd --zone=public --list-all # 查看指定zone的所有信息</span><br><span class="line">firewall-cmd --get-service # 查看所有级别被允许的信息</span><br><span class="line">firewall-cmd --zone=public --get-target --permanent # 获取public的target</span><br></pre></td></tr></table></figure>
+<h2 id="规则管理命令"><a href="#规则管理命令" class="headerlink" title="规则管理命令"></a>规则管理命令</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --panic-on # 终止所有数据包</span><br><span class="line">firewall-cmd --panic-off # 取消终止</span><br><span class="line">firewall-cmd --query-panic # 查看终止状态</span><br><span class="line">firewall-cmd --reload # 更新规则，不重启服务</span><br><span class="line">firewall-cmd --complete-reload # 更新规则，重启服务</span><br><span class="line">firewall-cmd --zone=public --add-interface=eth0 --permanent # 将eth0接口设置为public级别，永久生效</span><br><span class="line">firewall-cmd --set-default-zone=public # 设置public为默认级别</span><br></pre></td></tr></table></figure>
+<h2 id="端口管理命令"><a href="#端口管理命令" class="headerlink" title="端口管理命令"></a>端口管理命令</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --zone=public --list-ports # 现实public级别被允许进入的端口</span><br><span class="line">firewall-cmd --zone=public --add-port=8080/tcp # 允许tcp端口8080至public级别</span><br><span class="line">firewall-cmd --zone=public --add-port=5060-5090/udp --permanent # 允许udp端口5060-5090范围内的端口至public级别，并永久生效</span><br></pre></td></tr></table></figure>
+<h2 id="端口转发命令"><a href="#端口转发命令" class="headerlink" title="端口转发命令"></a>端口转发命令</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --zone=public --add-masquerade # 首先打开端口转发</span><br><span class="line">firewall-cmd --zone=public --add-forward-port=port=22:proto=tcp:toport=8022 # 将tcp22端口转发到8022</span><br><span class="line">firewall-cmd --zone=public --add-forward-port=port=22:proto=tcp:toaddr=192.168.0.100 # 将22端口转发到另一个地址上的同一个端口</span><br><span class="line">firewall-cmd --zone=public --add-forward-port=22:prototcp:toport=8022:toaddr=192.168.0.100 # 转发22端口到另一个地址的8022端口</span><br></pre></td></tr></table></figure>
+<h2 id="网卡管理命令"><a href="#网卡管理命令" class="headerlink" title="网卡管理命令"></a>网卡管理命令</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --zone=public --list-interfaces # 显示级别为public的所有网卡</span><br><span class="line">firewall-cmd --zone=public --add-interface=the0 --permanent # 将eth0的级别设置为public，并永久生效</span><br><span class="line">firewall-cmd --zone=dmz --change-interface=eth0 --permanent # 将网卡eth0从原来的级别修改为dmz，并永久生效</span><br><span class="line">firewall-cmd --zone=public --remove-interface=eth0 --permanent # 将网卡eth0从public级别中永久删除</span><br></pre></td></tr></table></figure>
+<h2 id="系统服务管理命令"><a href="#系统服务管理命令" class="headerlink" title="系统服务管理命令"></a>系统服务管理命令</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --zone=public --add-service=smtp # 添加服务smtp到public级别中</span><br><span class="line">firewall-cmd --zone=public --remove-service=smtp # 从public级别中移除smtp服务</span><br></pre></td></tr></table></figure>
+<h2 id="zone"><a href="#zone" class="headerlink" title="zone"></a>zone</h2><p>firewall能将不同的网络连接归类到不同的信任级别，zong提供以下几个级别</p>
+<ul>
+<li>drop 丢弃所有进入的包</li>
+<li>block 拒绝所有外部发起的连接，允许内部发起的连接</li>
+<li>public 允许指定的连接进入</li>
+<li>external 一般用于路由转发</li>
+<li>dmz 允许受限制的连接进入</li>
+<li>work 允许信任的计算机被限制的进入连接</li>
+<li>home 家庭网络，仅仅接收经过选择的连接</li>
+<li>internal 内部网络，仅仅接收经过选择的连接</li>
+<li>trusted 信任所有连接</li>
+</ul>
+<h2 id="过滤规则"><a href="#过滤规则" class="headerlink" title="过滤规则"></a>过滤规则</h2><p>过滤规则的优先顺序是source&gt;interface&gt;firewalld.conf,支持的过滤规则有：</p>
+<ul>
+<li>source 源地址</li>
+<li>interface 网卡</li>
+<li>service 服务名</li>
+<li>port 端口</li>
+<li>icmp-block icmp类型</li>
+<li>masquerade ip地址伪装</li>
+<li>forward-port 端口转发</li>
+<li>rule 自定义规则</li>
+</ul>
+<h2 id="traget"><a href="#traget" class="headerlink" title="traget"></a>traget</h2><p>当区域处理它的源或接口上的一个包时，但是没有处理该包的显式规则时，这时区域目标的target决定了该行为，tariget有以下几种：</p>
+<ul>
+<li>ACCEPT 通过该包</li>
+<li>REJECT 拒绝该包</li>
+<li>DROP 丢弃该包</li>
+<li>default 不做任何事情</li>
+</ul>
+<h2 id="富文本规则"><a href="#富文本规则" class="headerlink" title="富文本规则"></a>富文本规则</h2><p>使用富文本规则，可以用比较直接接口方式更容易理解的方法建立复杂防火墙规则，还可以永久保留设置。</p>
+<p>富文本的命令格式和结构：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">rule [family=&quot;&lt;rule family&gt;&quot;]</span><br><span class="line">    [ source address=&quot;&lt;address&gt;&quot; [invert=&quot;True&quot;] ]</span><br><span class="line">    [ destination address=&quot;&lt;address&gt;&quot; [invert=&quot;True&quot;] ]</span><br><span class="line">    [ &lt;element&gt; ]</span><br><span class="line">    [ log [prefix=&quot;&lt;prefix text&gt;&quot;] [level=&quot;&lt;log level&gt;&quot;] [limit value=&quot;rate/duration&quot;] ]</span><br><span class="line">    [ audit ]</span><br><span class="line">    [ accept|reject|drop ]</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>一个规则是关联某个zone的，一个zone可以有多个分区，如果几个规则相互影响或冲突，则执行和数据包相匹配的第一个规则；</p>
+</li>
+<li><p>规则系列可以限定ipv4或ipv6，如果没有指定，将同时为ipv4和ipv6增加规则；</p>
+</li>
+<li>规则命名<ul>
+<li>source<ul>
+<li>指定源地址,可以使用invert=”True”或invert=”Yes”来颠倒源地址；</li>
+</ul>
+</li>
+<li>denstination<ul>
+<li>指定目的地址，同源地址用法</li>
+</ul>
+</li>
+<li>service<ul>
+<li>服务名称</li>
+</ul>
+</li>
+<li>port<ul>
+<li>端口，可以是单个端口，也可以是端口范围n1-n2,协议可以是tcp或udp</li>
+<li><code>port=8022-8033 protocol=tcp</code></li>
+</ul>
+</li>
+<li>protocol<ul>
+<li>协议，可以是协议ID数字，也可以是协议名称</li>
+<li><code>protocol value=icmp</code></li>
+</ul>
+</li>
+<li>log<ul>
+<li>注册含有内核记录的新的连接请求到规则中，可以定义一个前缀文本，记录等级可以是emerg/alert/crit/error/warning/notice/info/debug</li>
+<li>等级用正的自然数表示，继续时间的单位s/m/h/d,最大限定值是1/d</li>
+</ul>
+</li>
+<li>accept/reject/drop<ul>
+<li>执行的动作可以是accept/reject/drop中的1个，选择drop所有数据包会被丢弃，并且不会向来源地发送任何信息</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="操作示例"><a href="#操作示例" class="headerlink" title="操作示例"></a>操作示例</h2><ol>
+<li><p>将ssh服务添加到internal级别中，仅允许192.168.0.0/24通过22端口访问,但是禁止192.168.0.92禁止登陆ssh</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --list-all # 查看</span><br><span class="line">firewall-cmd --zone=public --remove-service=ssh --permanent # 从public中永久移除ssh服务</span><br><span class="line">firewall-cmd --zone=internal --add-service=ssh --permanent # 将ssh服务添加到internal级别中</span><br><span class="line">firewall-cmd --zone=internal --add-source=192.168.0.0/24 --permanent # 添加源地址</span><br><span class="line">firewall-cmd --zone=internal --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.92&quot; service name=&quot;ssh&quot; drop&apos; --permanent # 添加富文本规则</span><br><span class="line">firewall-cmd --reload</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将ssh服务从zone中删除，在public中，仅允许192.168.0.100通过22端口访问</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --zone=internal --remove-service=ssh --permanent</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule family=ipv4 source address=192.168.0.100 port port=22 protocol=tcp accept&apos; --permanent</span><br><span class="line">firewall-cmd --reload</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将samba服务添加到internal，允许192.168.0.0/24中的用户访问,samba会使用tcp/139/445、udp/137/138端口</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --zone=internal --set-target=default --permanent</span><br><span class="line">firewall-cmd --zone=internal --add-interface=eth1 </span><br><span class="line">firewall-cmd --zone=internal \</span><br><span class="line"> --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.0/24&quot; port port=139 protocol=tcp accept&apos; --permanent</span><br><span class="line">firewall-cmd --zone=internal \</span><br><span class="line"> --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.0/24&quot; port port=445 protocol=tcp accept&apos; --permanent</span><br><span class="line">firewall-cmd --zone=internal \</span><br><span class="line"> --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.0/24&quot; port port=137-138 protocol=udp accept&apos; --permanent</span><br><span class="line">firewall-cmd --reload</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2019/01/12/firewall-cmd-learning.html" title="CentOS主机防火墙Firewalld学习笔记">https://kim1024.github.io/2019/01/12/firewall-cmd-learning.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/firewall-cmd/" rel="tag"><i class="fa fa-tag"></i> firewall-cmd</a>
+            
+              <a href="/tags/学习笔记/" rel="tag"><i class="fa fa-tag"></i> 学习笔记</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/01/12/iptables-learning.html" rel="next" title="Linux主机iptables学习笔记">
+                  <i class="fa fa-chevron-left"></i> Linux主机iptables学习笔记
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/01/12/kvm-windows.html" rel="prev" title="使用KVM创建Windows虚拟环境">
+                  使用KVM创建Windows虚拟环境 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本命令"><span class="nav-number">1.</span> <span class="nav-text">基本命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#规则管理命令"><span class="nav-number">2.</span> <span class="nav-text">规则管理命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#端口管理命令"><span class="nav-number">3.</span> <span class="nav-text">端口管理命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#端口转发命令"><span class="nav-number">4.</span> <span class="nav-text">端口转发命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#网卡管理命令"><span class="nav-number">5.</span> <span class="nav-text">网卡管理命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系统服务管理命令"><span class="nav-number">6.</span> <span class="nav-text">系统服务管理命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#zone"><span class="nav-number">7.</span> <span class="nav-text">zone</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过滤规则"><span class="nav-number">8.</span> <span class="nav-text">过滤规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#traget"><span class="nav-number">9.</span> <span class="nav-text">traget</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#富文本规则"><span class="nav-number">10.</span> <span class="nav-text">富文本规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#操作示例"><span class="nav-number">11.</span> <span class="nav-text">操作示例</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

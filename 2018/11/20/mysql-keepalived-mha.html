@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="MHA介绍 MHA目前在mysql高可用方面是一个相对成熟的解决方案，它由日本DeNA公司youshimaton开发，是一套优秀的作为MySQL高可用性环境下故障切换和主从提升的高可用软件。在MySQL故障切换过程中，MHA能做到在0~30秒之内自动完成数据库的故障切换操作，并且在进行故障切换的过程中，MHA能在最大程度上保证数据的一致性，以达到真正意义上的高可用。 MHA由2部分组成：MHA M">
+<meta name="keywords" content="keepalived,集群,Mysql,MHA">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mysql高可用架构之keepalived and MHA">
+<meta property="og:url" content="https://kim1024.github.io/2018/11/20/mysql-keepalived-mha.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="MHA介绍 MHA目前在mysql高可用方面是一个相对成熟的解决方案，它由日本DeNA公司youshimaton开发，是一套优秀的作为MySQL高可用性环境下故障切换和主从提升的高可用软件。在MySQL故障切换过程中，MHA能做到在0~30秒之内自动完成数据库的故障切换操作，并且在进行故障切换的过程中，MHA能在最大程度上保证数据的一致性，以达到真正意义上的高可用。 MHA由2部分组成：MHA M">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/19/FS4Faj.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/20/Fp29gO.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/20/Fp2KxS.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/20/FpbCxs.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.680Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mysql高可用架构之keepalived and MHA">
+<meta name="twitter:description" content="MHA介绍 MHA目前在mysql高可用方面是一个相对成熟的解决方案，它由日本DeNA公司youshimaton开发，是一套优秀的作为MySQL高可用性环境下故障切换和主从提升的高可用软件。在MySQL故障切换过程中，MHA能做到在0~30秒之内自动完成数据库的故障切换操作，并且在进行故障切换的过程中，MHA能在最大程度上保证数据的一致性，以达到真正意义上的高可用。 MHA由2部分组成：MHA M">
+<meta name="twitter:image" content="https://s1.ax1x.com/2018/11/19/FS4Faj.png">
+  <link rel="canonical" href="https://kim1024.github.io/2018/11/20/mysql-keepalived-mha">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>Mysql高可用架构之keepalived and MHA | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2018/11/20/mysql-keepalived-mha.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">Mysql高可用架构之keepalived and MHA
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2018-11-20 10:36:41" itemprop="dateCreated datePublished" datetime="2018-11-20T10:36:41+08:00">2018-11-20</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Mysql/" itemprop="url" rel="index"><span itemprop="name">Mysql</span></a></span>
+
+                
+                
+                  ，
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Mysql/高可用/" itemprop="url" rel="index"><span itemprop="name">高可用</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2018/11/20/mysql-keepalived-mha.html" class="post-meta-item leancloud_visitors" data-flag-title="Mysql高可用架构之keepalived and MHA" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="MHA介绍"><a href="#MHA介绍" class="headerlink" title="MHA介绍"></a>MHA介绍</h2><ul>
+<li>MHA目前在mysql高可用方面是一个相对成熟的解决方案，它由日本DeNA公司youshimaton开发，是一套优秀的作为MySQL高可用性环境下故障切换和主从提升的高可用软件。在MySQL故障切换过程中，MHA能做到在0~30秒之内自动完成数据库的故障切换操作，并且在进行故障切换的过程中，MHA能在最大程度上保证数据的一致性，以达到真正意义上的高可用。</li>
+<li>MHA由2部分组成：MHA Manager、MHA Node<ul>
+<li>MHA Manager是单独部署在一台独立的机器上用来管理多个master-slave集群，也可以部署在一个slave结点上。MHA Manager定期探测集群中的master结点，当master出现故障，它可以自动将最新数据的slave提升为新的master，然后将其他slave重新指向新的master;</li>
+</ul>
+</li>
+</ul>
+<a id="more"></a>
+<ul>
+<li>MHA Manager工具<ol>
+<li>masterha_check_ssh 检查MHA的ssh配置状况</li>
+<li>masterha_chck_repl 检查mysql复制状况</li>
+<li>masterha_manger    启动MHA</li>
+<li>masterha_chck_status    检查当前MHA运行状态</li>
+<li>masterha_master_monitor 检查master是否宕机</li>
+<li>masterha_master_switch  控制故障转移(自动or手动)</li>
+<li>masterha_conf_hosot     添加或删除配置的server信息</li>
+</ol>
+</li>
+<li>MHA Node运行在每台Mysql服务器上;<ul>
+<li>MHA支持一主多从，要求至少3台数据服务器，1台master，1台备用master，1台从;</li>
+</ul>
+</li>
+<li>MHA Node工具<ol>
+<li>save_binary_logs      保存和复制master的二进制日志</li>
+<li>apply_diff_relay_log  识别差异的中继日志时间并将其差异的事件应用到其他slave</li>
+<li>filter_mysqlbinlog    除去不必要的rollback事件<em>MHA不再使用该工具</em></li>
+<li>purge_relay_logs      清除中继日志(不会阻塞SQL线程)</li>
+</ol>
+<ul>
+<li>MHA工作步骤</li>
+</ul>
+</li>
+</ul>
+<ol>
+<li>从宕机的master保存二进制日志事件;</li>
+<li>识别含有最新更新的slave;</li>
+<li>应用差异的中继日至到其他slave;</li>
+<li>应用从master保存的二进制日志事件;</li>
+<li>提升一个slave为新的master;</li>
+<li>使其他的slave连接到新的master进行复制;</li>
+</ol>
+<ul>
+<li><strong>为了检查服务器硬件损坏宕机造成数据丢失，在配置MHA时建议配置Mysql半同步主从复制</strong></li>
+</ul>
+<h2 id="部署MHA"><a href="#部署MHA" class="headerlink" title="部署MHA"></a>部署MHA</h2><h3 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h3><ul>
+<li>Master <ul>
+<li>centos1 192.168.0.81 server-id:81 write</li>
+<li>MHA-Node</li>
+</ul>
+</li>
+<li>Master Back<ul>
+<li>centos2 192.168.0.82 server-id:82 read-only</li>
+<li>MHA-Node</li>
+</ul>
+</li>
+<li>Slave<ul>
+<li>centos3 192.168.0.83 server-id:83 read-only</li>
+<li>MHA-Node</li>
+</ul>
+</li>
+<li>Monitor host <ul>
+<li>centos4 192.168.0.84  server-id:null monitor</li>
+<li>MHA-Manager</li>
+</ul>
+</li>
+</ul>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ul>
+<li>perl-DBD-MySQL<ul>
+<li><code>yum install perl-DBD-MySQL -y</code></li>
+</ul>
+</li>
+<li><p>MHA-Node,所有的结点都需要安装MHA-node</p>
+<ol>
+<li>下载MHA-Node，执行安装命令<code>rpm -ivh mha4mysql-node-0.54-1.el5.noarch.rpm</code></li>
+</ol>
+</li>
+<li><p>MHA-Manager</p>
+<ol>
+<li>安装依赖程序<ul>
+<li><code>yum install perl-DBD-MySQL perl-Config-Tiny perl-Log-Dispatch perl-Parallel-ForkManager -y</code></li>
+</ul>
+</li>
+<li>安装MHA-Manager<ul>
+<li><code>rpm -ivh mha4mysql-manager-0.55-1.el5.noarch.rpm</code></li>
+</ul>
+</li>
+<li>安装附加脚本文件<ul>
+<li><code>cp mha-source/samples/scripts/* /usr/local/bin/</code></li>
+</ul>
+</li>
+</ol>
+</li>
+<li><p>配置服务器ssh登陆</p>
+<ol>
+<li>不能禁用密码登陆，否则会出错</li>
+<li>执行<code>ssh-add</code>时报错：<code>Could not open a connection to your authentication agent</code>,先执行<code>ssh-agent bash</code>命令，再执行<code>ssh-add</code>命令</li>
+<li><code>ssh-keygen -t rsa</code>生成密钥对，复制<code>id_rsa.pub</code>为<code>authorized_keys</code>,将生成的公钥复制到其他服务器<code>ssh-copy-id [centos2/3/4]</code>,其他服务器中执行相同的操作</li>
+</ol>
+</li>
+<li><p>配置Mysql数据库主从复制</p>
+<ul>
+<li>配置过程参考文章：<a href="https://kim1024.github.io/2018/11/02/Mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E9%85%8D%E7%BD%AE%E5%BC%82%E6%AD%A5%E5%90%8C%E6%AD%A5%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">Mysql配置异步同步主从复制</a></li>
+<li>在centos2\3上设置数据库为只读，在数据库中设置，未将该设置添加到mysql配置文件中，在mysql中执行命令<code>set global read_only = 1;</code></li>
+<li>在centos2\3上设置relay log的清除方式<code>set global relay_log_purge = 0;</code><ul>
+<li>MHA在切换过程中，从苦的恢复过程依赖于relay log的相关信息，设置relay log 为off状态，采用手动清除的方式，创建脚本文件，并将脚本文件添加到crontab中定期执行，脚本文件<code>purge_relay_log.sh</code><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line">user=root</span><br><span class="line">password=mysql_root_passwd</span><br><span class="line">port=3306</span><br><span class="line">log_dir=&apos;/var/log/masterha/log&apos;</span><br><span class="line">work_dir=`home/user/mysql/`</span><br><span class="line">purge=&apos;/usr/local/bin/purge_relay_logs&apos;</span><br><span class="line">if [ ! -d $&#123;log_dir&#125; ]</span><br><span class="line">then</span><br><span class="line">   mkdir $&#123;log_dir&#125; -p</span><br><span class="line">fi</span><br><span class="line">$&#123;purge&#125; --user=$&#123;user&#125; --password=$&#123;passwd&#125; --disable_relay_log_purge --port=$&#123;port&#125; --workdir=$&#123;work_dir&#125; &gt;&gt; $&#123;log_dir&#125;/purge_relay_logs.log 2&gt;&amp;1</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><ul>
+<li>创建配置文件目录<code>mkdir -p /etc/masterha</code></li>
+<li>创建配置文件<code>cd /etc/masterha &amp;&amp; touch app1.cnf</code></li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">[server default]</span><br><span class="line"># 设置mha-manager工作目录</span><br><span class="line">manager_workdir=/var/log/masterha/app1</span><br><span class="line"># 设置mha-manager日志目录</span><br><span class="line">manager_log=/var/log/masterha/app1/app1.log</span><br><span class="line"># 设置master保存二进制日志事件的位置,便于mha找到</span><br><span class="line">master_binlog_dir=/var/lib/mysql</span><br><span class="line"># 设置自动failover的切换脚本，需要提前安装</span><br><span class="line">master_ip_failover_script=/usr/local/bin/master_ip_failover</span><br><span class="line"># 设置手动切换的脚本</span><br><span class="line">master_ip_online_change_script=/usr/local/bin/master_ip_online_change</span><br><span class="line"># 设置Mysql用户密码</span><br><span class="line">user=root</span><br><span class="line">password=mysql_root_passwd</span><br><span class="line"># 监控主库，发送ping包的间隔，默认3s，尝试3次没有回应自动railover</span><br><span class="line">ping_interval=1</span><br><span class="line"># 设置远程mysql发生切换时二进制日志事件保存位置</span><br><span class="line">remote_workdir=/tmp</span><br><span class="line"># 设置数据库主从复制的用户密码</span><br><span class="line">repl_user=slave_db</span><br><span class="line">repl_password=slave_password</span><br><span class="line"># 设置发生切换后发送的报警脚本</span><br><span class="line">report_script=/usr/local/bin/send_report</span><br><span class="line">secondary_check_script=/usr/local/bin/master_secondary_check -s centos2 -s centos3</span><br><span class="line"># 设置故障发生后关闭故障主机的脚本，作用是防止发生脑裂</span><br><span class="line"># shutdown-script=&quot;&quot;</span><br><span class="line"># 设置ssh登陆的用户名,使用普通用户在检查复制时会报错</span><br><span class="line">ssh_user=root</span><br><span class="line"></span><br><span class="line">[server1]</span><br><span class="line"># Master服务器</span><br><span class="line">hostname=centos1</span><br><span class="line"># port=3306</span><br><span class="line"></span><br><span class="line">[server2]</span><br><span class="line"># 备用Master服务器</span><br><span class="line">hostname=centos2</span><br><span class="line"># port=3306</span><br><span class="line"># 设置为候选Master，如果设置了该参数，Master发生故障后，将该服务器提升为Master，无论该服务器是否是最新的Slave</span><br><span class="line">candidate_master=1</span><br><span class="line"># 默认情况下，如果一个slave落后master 100M的relay logs,MHA将不会选择该slave作为新master;通过设置该参数值为0，MHA在出发切换mster主机时，会忽略复制延时，该参数对设置了candidate_master=1的主机非常有用</span><br><span class="line">check_repl_delay=0</span><br><span class="line"></span><br><span class="line">[server3]</span><br><span class="line">hostname=centos3</span><br><span class="line"># port=3306</span><br></pre></td></tr></table></figure>
+<ul>
+<li>在mha中引入keepalived，修改vip漂移脚本文件<code>master_ip_failover</code>,在该脚本中添加Master宕机后MHA对keepalived的处理<code>vi /usr/local/bin/master_ip_failover</code>添加以下内容 <sup>4</sup><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">my $vip = &apos;192.168.0.110&apos;; # vip地址</span><br><span class="line">my $ssh_start_vip =&quot;systemctl start keepalived&quot;;</span><br><span class="line">my $ssh_stop_vip =&quot;systemctl stop keepalived&quot;;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<ul>
+<li>修改脚本文件<code>master_ip_online</code>,添加以下内容<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">my $vip = &apos;192.168.0.110/32&apos;; # vip地址</span><br><span class="line">my $key = &apos;1&apos;;</span><br><span class="line">my $ssh_start_vip = &quot;systemctl start keepalived&quot;;</span><br><span class="line">my $ssh_stop_vip = &quot;systemctl stop keepalived&quot;;</span><br><span class="line">my $orig_master_ssh_port = 22;</span><br><span class="line">my $new_master_ssh_port = 22;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<ul>
+<li><p>修改脚本文件<code>send_report</code>,添加以下内容</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">my $smtp=&apos;smtp.xxx.com&apos;;</span><br><span class="line">my $mail_from=&apos;send@xx.com&apos;;</span><br><span class="line">my $mail_user=&apos;send_user@xx.com&apos;;</span><br><span class="line">my $mail_pass=&apos;Password&apos;;</span><br><span class="line">my$mail_to=[&apos;mail1@xx.com&apos;,&apos;mail2@xx.com&apos;];</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>检查MHA-Manager到所有结点的ssh连接状态,使用命令<code>masterha_check_ssh --conf=/etc/masterha/app1.cnf</code></p>
+<ul>
+<li>执行命令后会有一个报错<code>Can&#39;t locate MHA/SSHCheck.pm in @INC (@INC contains: /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at /usr/bin/masterha_check_ssh line 25.</code>,解决方法是在所有的服务器中做一个软连接<code>ln -s /usr/lib/perl5/vendor_perl/MHA /usr/lib64/perl5/vendor_perl/</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="检查"><a href="#检查" class="headerlink" title="检查"></a>检查</h3><ul>
+<li>检查masterha的ssh无密码验证<code>masterha_check_ssh --conf=/etc/masterha/app1.cnf</code><br><img src="https://s1.ax1x.com/2018/11/19/FS4Faj.png" alt="masterha_check_ssh"></li>
+<li>检查masterha的复制环境<code>masterha_check_repl</code>，在<code>app1.cnf</code>配置文件中，如果<code>ssh_user</code>使用的是普通用户，在服务器中，普通用户无权访问mysql的二进制日志bin_log,relay_log,mha工作目录，会提示以下错误<br><code>[error][/usr/lib64/perl5/vendor_perl/MHA/MasterMonitor.pm, ln386] Error happend on checking configurations. SSH Configuration Check Failed!
+at /usr/lib64/perl5/vendor_perl/MHA/MasterMonitor.pm line 341.</code></li>
+<li>检查Mysql主从复制<code>masterha_check_repl --conf=/etc/masterha/app1.cnf</code>,出现<code>ok</code>字样，表明检查通过<br><img src="https://s1.ax1x.com/2018/11/20/Fp29gO.png" alt="check_repl"></li>
+<li>在管理服务器中后台启动MHA监控<code>nohup masterha_manager --conf=/etc/masterha/app1.cnf --remove_dead_master_conf --ignore_last_failover &lt; /dev/null &gt; /var/log/masterha/app1/app1.log 2&gt;&amp;1 &amp;</code><ul>
+<li><code>--remove_dead_master_conf</code> 该参数代表当发生主从切换后，老的主库的ip将会从配置文件中移除</li>
+<li><code>--manager_log</code> 日志存放位置</li>
+<li><code>--ignore_last_failover</code> 在缺省情况下，如果mha检测到连续发生宕机，且2次宕机的事件不足8小时，则不会进行failover。该参数代表忽略上次mha触发切换产生的文件</li>
+</ul>
+</li>
+<li>查看mha的运行状态<code>masterha_check_status</code>,可以看到mha运行中，Master服务器为centos<br><img src="https://s1.ax1x.com/2018/11/20/Fp2KxS.png" alt="check_status"></li>
+<li>关闭mha监控<code>masterha_stop --conf=/etc/masterha/app1.cnf</code></li>
+</ul>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><ul>
+<li><p>使用<code>sysbench</code>对Mysql数据库进行插入测试，执行以下命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> sysbench \</span><br><span class="line">--mysql-user=root --mysql-password=mysql_root_passwd --db-driver=mysql \</span><br><span class="line">--mysql-socket=/var/lib/mysql/mysql.sock --mysql-db=test1120 --range-size=100 \</span><br><span class="line">--table-size=2000 --tables=20 --threads=2 --time=60 \</span><br><span class="line">--rand-type=uniform /usr/share/doc/sysbench/oltp_insert.lua prepare</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>停掉Backup服务器中的slave sql线程，模拟主从延时</p>
+</li>
+<li>停掉Master服务器中的Mysqld，模拟Master宕机,Master切换到centos2，vip漂移到centos2,slave指向centos2,centos2中的slave指向被清空，mha manager进程会停掉，在配置文件中，关于server1的信息被删除<br><img src="https://s1.ax1x.com/2018/11/20/FpbCxs.png" alt="test_failover"></li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://www.cnblogs.com/gomysql/p/3675429.html" target="_blank" rel="noopener">https://www.cnblogs.com/gomysql/p/3675429.html</a></li>
+<li><a href="https://github.com/yoshinorim/mha4mysql-manager/wiki/Installation" target="_blank" rel="noopener">https://github.com/yoshinorim/mha4mysql-manager/wiki/Installation</a></li>
+<li><a href="https://rpmfind.net/linux/RPM/index.html" target="_blank" rel="noopener">https://rpmfind.net/linux/RPM/index.html</a></li>
+<li><a href="http://www.voidcn.com/article/p-fsekcbpa-mt.html" target="_blank" rel="noopener">http://www.voidcn.com/article/p-fsekcbpa-mt.html</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2018/11/20/mysql-keepalived-mha.html" title="Mysql高可用架构之keepalived and MHA">https://kim1024.github.io/2018/11/20/mysql-keepalived-mha.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/keepalived/" rel="tag"><i class="fa fa-tag"></i> keepalived</a>
+            
+              <a href="/tags/集群/" rel="tag"><i class="fa fa-tag"></i> 集群</a>
+            
+              <a href="/tags/Mysql/" rel="tag"><i class="fa fa-tag"></i> Mysql</a>
+            
+              <a href="/tags/MHA/" rel="tag"><i class="fa fa-tag"></i> MHA</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2018/11/20/centos-keepalived.html" rel="next" title="Centos中安装keepalive和基础使用">
+                  <i class="fa fa-chevron-left"></i> Centos中安装keepalive和基础使用
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2018/11/20/mha-m2s.html" rel="prev" title="MHA在线主从切换">
+                  MHA在线主从切换 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MHA介绍"><span class="nav-number">1.</span> <span class="nav-text">MHA介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#部署MHA"><span class="nav-number">2.</span> <span class="nav-text">部署MHA</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#环境"><span class="nav-number">2.1.</span> <span class="nav-text">环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装"><span class="nav-number">2.2.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置"><span class="nav-number">2.3.</span> <span class="nav-text">配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#检查"><span class="nav-number">2.4.</span> <span class="nav-text">检查</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试"><span class="nav-number">3.</span> <span class="nav-text">测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="架构 h-master role:NameNode/JobTracker ip:192.168.0.210 app:hadoop/jdk jobs:主节点，总管分布式数据和分解任务的执行;主节点负责调度构成一个作业的所有任务   h-slave role:DataNode/Tasktracker ip:192.168.0.211 app:hadoop/jdk jobs:从节点，负责分布式数据存储以">
+<meta name="keywords" content="hadoop,cluster">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hadoop部署集群">
+<meta property="og:url" content="https://kim1024.github.io/2019/07/28/hadoop_cluster_setup.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="架构 h-master role:NameNode/JobTracker ip:192.168.0.210 app:hadoop/jdk jobs:主节点，总管分布式数据和分解任务的执行;主节点负责调度构成一个作业的所有任务   h-slave role:DataNode/Tasktracker ip:192.168.0.211 app:hadoop/jdk jobs:从节点，负责分布式数据存储以">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s2.ax1x.com/2019/07/28/elYANF.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/07/28/elK8ht.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/07/28/ellS6f.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/07/28/el878A.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.676Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hadoop部署集群">
+<meta name="twitter:description" content="架构 h-master role:NameNode/JobTracker ip:192.168.0.210 app:hadoop/jdk jobs:主节点，总管分布式数据和分解任务的执行;主节点负责调度构成一个作业的所有任务   h-slave role:DataNode/Tasktracker ip:192.168.0.211 app:hadoop/jdk jobs:从节点，负责分布式数据存储以">
+<meta name="twitter:image" content="https://s2.ax1x.com/2019/07/28/elYANF.png">
+  <link rel="canonical" href="https://kim1024.github.io/2019/07/28/hadoop_cluster_setup">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>Hadoop部署集群 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2019/07/28/hadoop_cluster_setup.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">Hadoop部署集群
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-07-28 15:33:34" itemprop="dateCreated datePublished" datetime="2019-07-28T15:33:34+08:00">2019-07-28</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Hadoop/" itemprop="url" rel="index"><span itemprop="name">Hadoop</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2019/07/28/hadoop_cluster_setup.html" class="post-meta-item leancloud_visitors" data-flag-title="Hadoop部署集群" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><ul>
+<li>h-master<ul>
+<li>role:NameNode/JobTracker</li>
+<li>ip:192.168.0.210</li>
+<li>app:hadoop/jdk</li>
+<li>jobs:主节点，总管分布式数据和分解任务的执行;主节点负责调度构成一个作业的所有任务</li>
+</ul>
+</li>
+<li>h-slave<ul>
+<li>role:DataNode/Tasktracker</li>
+<li>ip:192.168.0.211</li>
+<li>app:hadoop/jdk</li>
+<li>jobs:从节点，负责分布式数据存储以及任务的执行;从节点负责由主节点指派的任务</li>
+</ul>
+</li>
+<li>mapreduce框架<ul>
+<li>主节点JobTracker</li>
+<li>每个从节点TaskTracker</li>
+</ul>
+</li>
+</ul>
+<a id="more"></a>
+<h2 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h2><h3 id="配置h-master无密码ssh登录h-slave"><a href="#配置h-master无密码ssh登录h-slave" class="headerlink" title="配置h-master无密码ssh登录h-slave"></a>配置h-master无密码ssh登录h-slave</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 2048</span><br><span class="line">ssh-copy-id hadoop@h-slave</span><br><span class="line">ssh hadoop@h-slave</span><br></pre></td></tr></table></figure>
+<h3 id="安装Java环境"><a href="#安装Java环境" class="headerlink" title="安装Java环境"></a>安装Java环境</h3><ul>
+<li>安装JDK(All Servers)<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&lt;!--install_java.sh--&gt;</span><br><span class="line">#!/bin/bash</span><br><span class="line"># env</span><br><span class="line">java_env=java.env</span><br><span class="line"># install jdk8</span><br><span class="line">rpm -ivh jdk-8u221-linux-x64.rpm</span><br><span class="line"># configure java env</span><br><span class="line">cp /etc/profile /etc/profile.old</span><br><span class="line">cat $&#123;java_env&#125; &gt;&gt; /etc/profile.old</span><br><span class="line"># source profile</span><br><span class="line">source /etc/profile</span><br><span class="line"># show java version</span><br><span class="line">java -version</span><br><span class="line">&lt;!--java.env--&gt;</span><br><span class="line">export JAVA_HOME=/usr/java/jdk1.8.0_221-amd64</span><br><span class="line">export PATH=$&#123;PATH&#125;:$&#123;JAVA_HOME&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="安装Hadoop-All-Servers"><a href="#安装Hadoop-All-Servers" class="headerlink" title="安装Hadoop(All Servers)"></a>安装Hadoop(All Servers)</h3><h4 id="h-master服务器"><a href="#h-master服务器" class="headerlink" title="h-master服务器"></a>h-master服务器</h4><ul>
+<li>安装和配置</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line">&lt;!--install_hadoop.sh--&gt;</span><br><span class="line">#!/bin/bash</span><br><span class="line"># env</span><br><span class="line">hadoop_dir=/opt/hadoop-3.1.2</span><br><span class="line">pwd_dir=$(echo `pwd`)</span><br><span class="line">host_name=$(echo &apos;hostname&apos;)</span><br><span class="line"># install hadoop</span><br><span class="line">tar -xzvf hadoop-3.1.2.tar.gz -C /opt</span><br><span class="line"># create group and user</span><br><span class="line">groupadd hadoop</span><br><span class="line">useradd -g hadoop hadoop</span><br><span class="line">passwd hadoop</span><br><span class="line"># change owner of hadoop_dir</span><br><span class="line">chown -R hadoop:hadoop $&#123;hadoop_dir&#125;</span><br><span class="line"># source profile</span><br><span class="line">cp /etc/profile /etc/profile.add</span><br><span class="line">cat hadoop.env &gt;&gt; /etc/profile</span><br><span class="line">source /etc/profile</span><br><span class="line"># set firewall rule</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.210&quot; port port=&quot;9000&quot; protocol=&quot;tcp&quot; accept&apos; --permanent</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.210&quot; port port=&quot;9870&quot; protocol=&quot;tcp&quot; accept&apos; --permanent</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.0/24&quot; port port=&quot;8088&quot; protocol=&quot;tcp&quot; accept&apos; --permanent</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.0/24&quot; port port=&quot;10020&quot; protocol=&quot;tcp&quot; accept&apos; --permanent</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.0/24&quot; port port=&quot;19888&quot; protocol=&quot;tcp&quot; accept&apos; --permanent</span><br><span class="line">firewall-cmd --reload</span><br><span class="line"># configure hadoop</span><br><span class="line">mkdir /opt/hadoop-3.1.2/hdfs/namenode</span><br><span class="line">## configure xml file</span><br><span class="line">mv $&#123;hadoop_dir&#125;/etc/hadoop/core-site.xml $&#123;hadoop_dir&#125;/etc/hadoop/core-site.xml.old</span><br><span class="line">mv $&#123;hadoop_dir&#125;/etc/hadoop/hdfs-site.xml $&#123;hadoop_dir&#125;/etc/hadoop/hdfs-site.xml.old</span><br><span class="line">mv $&#123;hadoop_dir&#125;/etc/hadoop/mapred-site.xml $&#123;hadoop_dir&#125;/etc/hadoop/mapred-site.xml.old</span><br><span class="line">mv $&#123;hadoop_dir&#125;/etc/hadoop/yarn-site.xml $&#123;hadoop_dir&#125;/etc/hadoop/yarn-site.xml.old</span><br><span class="line">cp core-site-master.xml $&#123;hadoop_dir&#125;/etc/hadoop/core-site.xml</span><br><span class="line">cp hdfs-site-master.xml $&#123;hadoop_dir&#125;/etc/hadoop/hdfs-site.xml</span><br><span class="line">cp mapred-site-master.xml $&#123;hadoop_dir&#125;/etc/hadoop/mapred-site.xml</span><br><span class="line">cp yarn-site-master.xml $&#123;hadoop_dir&#125;/etc/hadoop/yarn-site.xml</span><br><span class="line">## configure workers </span><br><span class="line">cd $&#123;hadoop_dir&#125;/etc/hadoop &amp;&amp; cp workers workser.old</span><br><span class="line">sed -i &apos;1d&apos; workers</span><br><span class="line">echo &quot;h-slave&quot; &gt; workers</span><br><span class="line">chown -R hadoop:hadoop $&#123;hadoop_dir&#125;</span><br><span class="line"># configure hadoop_env.sh</span><br><span class="line">echo &quot;export JAVA_HOME=/usr/java/jdk1.8.0_221-amd64&quot; &gt;&gt; $&#123;hadoop_dir&#125;/etc/hadoop/hadoop_env.sh</span><br><span class="line">&lt;!--hadoop.env--&gt;</span><br><span class="line">export HADOOP_HOME=/opt/hadoop-3.1.2</span><br><span class="line">export PATH=$&#123;PATH&#125;:$&#123;HADOOP_HOME&#125;/bin:$&#123;HADOOP_HOME&#125;/sbin</span><br><span class="line">&lt;!--core-site-master.xml--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;fs.default.name&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;hdfs://h-mster:9000&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;hadoop.tmp.dir&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;file:/home/hadoop/tmp&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br><span class="line">&lt;!--hdfs-site-master.xml--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;dfs.name.dir&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;/opt/hadoop-3.1.2/hdfs/namenode&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;3&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;dfs.data.dir&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;/opt/hadoop-3.1.2/hdfs/data&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br><span class="line">&lt;!--mapred-site-master.xml--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.framework.name&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;yarn&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapred.job.tracker&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;http://h-master:9001&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br><span class="line">&lt;!--yarn-site-master.xml--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.framework.name&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;yarn&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapred.job.tracker&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;http://h-master:9001&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.jobhistory.address&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;h-master:10020&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.jobhistory.webapp.address&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;h-master:19888&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.jobhistory.intermediate-done-dir&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;/home/hadoop/history/tmp&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">  &lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.jobhistory.done-dir&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;/home/hadoop/history/done&lt;/value&gt;</span><br><span class="line">  &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>启动</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># format hdfs on first start</span><br><span class="line">su hadoop</span><br><span class="line">hdfs namenode -format</span><br><span class="line"># start</span><br><span class="line">cd /opt/hadoop-3.1.2/sbin &amp;&amp; ./start-all.sh</span><br><span class="line"># start jobhistory</span><br><span class="line">mapred --daemon start jobhistory</span><br><span class="line"># show runing info</span><br><span class="line">jps</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>注意<br>如果ssh端口不是默认的22，需要在文件<code>hadoop_env.sh</code>中修改，具体的位置是<code>HADOOP_SSH_OPTS=&quot;-p 9022&quot;</code><br><img src="https://s2.ax1x.com/2019/07/28/elYANF.png" alt="HADOOP_SSH_OPTS"></p>
+</li>
+</ul>
+<h4 id="h-slave服务器"><a href="#h-slave服务器" class="headerlink" title="h-slave服务器"></a>h-slave服务器</h4><ul>
+<li>在主服务器中复制hadoop安装目录到slave</li>
+<li>删除workers文件中的内容</li>
+<li>配置环境变量</li>
+<li>在hadoop_env.sh文件中添加java环境变量</li>
+</ul>
+<h4 id="Web-UI"><a href="#Web-UI" class="headerlink" title="Web UI"></a>Web UI</h4><ul>
+<li>Yarn WebUI <a href="http://h-master:8088" target="_blank" rel="noopener">http://h-master:8088</a><br><img src="https://s2.ax1x.com/2019/07/28/elK8ht.png" alt="yarn_ui"></li>
+<li>NameNode WebUI <a href="http://h-master:9870" target="_blank" rel="noopener">http://h-master:9870</a><br><img src="https://s2.ax1x.com/2019/07/28/ellS6f.png" alt="NameNode"></li>
+<li>JobHistory WebUI <a href="http://h-master:19888" target="_blank" rel="noopener">http://h-master:19888</a><br><img src="https://s2.ax1x.com/2019/07/28/el878A.png" alt="JobHistory"></li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://blog.csdn.net/lysc_forever/article/details/52033508" target="_blank" rel="noopener">Hadoop多节点集群的构建</a></li>
+<li><a href="http://www.ityouknow.com/hadoop/2017/07/24/hadoop-cluster-setup.html" target="_blank" rel="noopener">hadoop分布式集群搭建</a></li>
+<li><a href="https://www.linode.com/docs/databases/hadoop/how-to-install-and-set-up-hadoop-cluster/" target="_blank" rel="noopener">How to Install and Set Up a 3-Node Hadoop Cluster</a></li>
+<li><a href="https://hadoop.apache.org/docs/r3.1.2/hadoop-project-dist/hadoop-common/ClusterSetup.html#Web_Interfaces" target="_blank" rel="noopener">Hadoop Cluster Setup</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2019/07/28/hadoop_cluster_setup.html" title="Hadoop部署集群">https://kim1024.github.io/2019/07/28/hadoop_cluster_setup.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/hadoop/" rel="tag"><i class="fa fa-tag"></i> hadoop</a>
+            
+              <a href="/tags/cluster/" rel="tag"><i class="fa fa-tag"></i> cluster</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/07/27/hadoop_hive_mysql.html" rel="next" title="Hive部署单节点过程">
+                  <i class="fa fa-chevron-left"></i> Hive部署单节点过程
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/07/29/hadoop_learning.html" rel="prev" title="Hadoop基础学习">
+                  Hadoop基础学习 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#架构"><span class="nav-number">1.</span> <span class="nav-text">架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装步骤"><span class="nav-number">2.</span> <span class="nav-text">安装步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#配置h-master无密码ssh登录h-slave"><span class="nav-number">2.1.</span> <span class="nav-text">配置h-master无密码ssh登录h-slave</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装Java环境"><span class="nav-number">2.2.</span> <span class="nav-text">安装Java环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装Hadoop-All-Servers"><span class="nav-number">2.3.</span> <span class="nav-text">安装Hadoop(All Servers)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#h-master服务器"><span class="nav-number">2.3.1.</span> <span class="nav-text">h-master服务器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#h-slave服务器"><span class="nav-number">2.3.2.</span> <span class="nav-text">h-slave服务器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Web-UI"><span class="nav-number">2.3.3.</span> <span class="nav-text">Web UI</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

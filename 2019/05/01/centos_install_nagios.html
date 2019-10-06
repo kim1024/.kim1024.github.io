@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="禁用SELinux根据官方的指导文件需要禁用SELinux，首先我们获取SELinux状态，如果处于启用状态，切换为宽容模式permissive。12345# 获取SELinux状态getenforce# 修改为宽容模式sudo vi /etc/selinux/config# 修改enforing为permissive 安装Nagios 安装依赖程序sudo yum install gcc gli">
+<meta name="keywords" content="nagios">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CentOS源码安装、配置Nagios+Plugins">
+<meta property="og:url" content="https://kim1024.github.io/2019/05/01/centos_install_nagios.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="禁用SELinux根据官方的指导文件需要禁用SELinux，首先我们获取SELinux状态，如果处于启用状态，切换为宽容模式permissive。12345# 获取SELinux状态getenforce# 修改为宽容模式sudo vi /etc/selinux/config# 修改enforing为permissive 安装Nagios 安装依赖程序sudo yum install gcc gli">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s2.ax1x.com/2019/04/30/EGEhm4.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/05/01/EJ5PVs.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/05/01/EJTJzV.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.673Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CentOS源码安装、配置Nagios+Plugins">
+<meta name="twitter:description" content="禁用SELinux根据官方的指导文件需要禁用SELinux，首先我们获取SELinux状态，如果处于启用状态，切换为宽容模式permissive。12345# 获取SELinux状态getenforce# 修改为宽容模式sudo vi /etc/selinux/config# 修改enforing为permissive 安装Nagios 安装依赖程序sudo yum install gcc gli">
+<meta name="twitter:image" content="https://s2.ax1x.com/2019/04/30/EGEhm4.png">
+  <link rel="canonical" href="https://kim1024.github.io/2019/05/01/centos_install_nagios">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>CentOS源码安装、配置Nagios+Plugins | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2019/05/01/centos_install_nagios.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">CentOS源码安装、配置Nagios+Plugins
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-05-01 15:21:26" itemprop="dateCreated datePublished" datetime="2019-05-01T15:21:26+08:00">2019-05-01</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Nagios/" itemprop="url" rel="index"><span itemprop="name">Nagios</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2019/05/01/centos_install_nagios.html" class="post-meta-item leancloud_visitors" data-flag-title="CentOS源码安装、配置Nagios+Plugins" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="禁用SELinux"><a href="#禁用SELinux" class="headerlink" title="禁用SELinux"></a>禁用SELinux</h2><p>根据官方的指导文件需要禁用SELinux，首先我们获取SELinux状态，如果处于启用状态，切换为宽容模式permissive。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 获取SELinux状态</span><br><span class="line">getenforce</span><br><span class="line"># 修改为宽容模式</span><br><span class="line">sudo vi /etc/selinux/config</span><br><span class="line"># 修改enforing为permissive</span><br></pre></td></tr></table></figure></p>
+<h2 id="安装Nagios"><a href="#安装Nagios" class="headerlink" title="安装Nagios"></a>安装Nagios</h2><ol>
+<li>安装依赖程序<br><code>sudo yum install gcc glibc glibc-common wget unzip httpd php gd gd-devel perl postfix -y</code></li>
+<li>下载Nagios core源码文件<br><code>cd ~/ &amp;&amp; wget https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.3.tar.gz</code></li>
+<li>解压源码文件<br><code>cd ~/ &amp;&amp; tar -xzvf nagios-4.4.3.tar.gz</code><a id="more"></a></li>
+<li><p>编译源文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 切换到源码文件根目录</span><br><span class="line">cd ~/nagios-4.4.3</span><br><span class="line"># 配置</span><br><span class="line">./configure</span><br><span class="line"># 编译文件</span><br><span class="line">sudo make all</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建nagios用户和组,并修改apache用户的默认组<br><code>sudo make install-groups-users &amp;&amp; sudo usermod -a -G nagios apache</code></p>
+</li>
+<li>安装<br><code>sudo make install</code></li>
+<li>将nagios安装为服务<br><code>sudo make install-daemoninit &amp;&amp; sudo systemctl enable httpd.service</code></li>
+<li>安装命令行模式<br><code>sudo make install-commandmode</code></li>
+<li>安装配置文件<br><code>sudo make install-config</code></li>
+<li>安装Apache配置文件<br><code>sudo make install-webconf</code></li>
+<li><p>配置防火墙</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># 切换到root用户</span><br><span class="line">su root</span><br><span class="line"># 添加80端口到public，防蚊源根据实际情况，选择单一ip地址或ip地址范围</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.90&quot; port port=&quot;80&quot; protocol=tcp&quot; accept&apos; --permanent</span><br><span class="line">firewall-cmd --reload</span><br><span class="line"># 切换到管理员用户</span><br><span class="line">su kim</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建Nagios管理员用户<em>na_admin</em><br><code>sudo htpasswd -c /usr/local/nagios/etc/htpasswd.users na_admin</code><br>需要输入管理员密码，再重新输入一次密码。<br>创建系统管理员后，如果还需要额外创建其他用户，使用命令<code>sudo htpasswd /usr/local/nagios/etc/htpasswd.users na_user</code>,主要不要使用参数<code>-c</code>否则会替换原来的系统管理员。</p>
+</li>
+<li><p>启动Apache服务和Nagios服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># 启动Apache</span><br><span class="line">sudo systemctl start httpd.service</span><br><span class="line"># 启动Nagios</span><br><span class="line">sudo systemctl start nagios.service</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>测试Nagios<br>打开本地浏览器，输入Nagios服务器的域名或ip地址，<em><a href="http://ip/nagios" target="_blank" rel="noopener">http://ip/nagios</a></em><br><img src="https://s2.ax1x.com/2019/04/30/EGEhm4.png" alt="nagios_web"></p>
+</li>
+</ol>
+<h2 id="安装Nagios-plugins"><a href="#安装Nagios-plugins" class="headerlink" title="安装Nagios-plugins"></a>安装Nagios-plugins</h2><p>Nagios插件的安装目录是<em>/usr/local/nagios/libexec/</em></p>
+<ol>
+<li>安装依赖<br><code>sudo yum install gcc glibc glibc-common make gettext automake autoconf wget openssl-devel net-snmp net-snmp-utils epel-release -y</code><br><code>sudo yum install perl-Net-SNMP -y</code></li>
+<li><p>下载plugin源码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd ~/</span><br><span class="line">wget -O nagios-plugins-release-2.2.1.tar.gz https://github.com/nagios-plugins/nagios-plugins/archive/release-2.2.1.tar.gz</span><br><span class="line">tar -xzvf nagios-plugins-release-2.2.1.tar.gz</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编译安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">cd ~/nagios-plugins-release-2.2.1</span><br><span class="line"># 配置</span><br><span class="line">sudo ./tools/setup</span><br><span class="line">./configure</span><br><span class="line"># 使用多线程编译</span><br><span class="line">sudo make -j10</span><br><span class="line"># 安装</span><br><span class="line">sudo make install</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="配置Nagios"><a href="#配置Nagios" class="headerlink" title="配置Nagios"></a>配置Nagios</h2><h3 id="基本信息"><a href="#基本信息" class="headerlink" title="基本信息"></a>基本信息</h3><p>Nagios的配置文件位于<code>/usr/local/nagios/etc</code>,配置文件以<code>.cfg</code>结尾，主要的文件是<code>nagios.cfg</code>。<br><code>check_external_comands</code>参数控制是否直接通过web接口运行Nagios，参数为<strong>1</strong>为启用。<br>Nagios的主机、服务等相关的配置文件位于<code>/usr/local/nagios/etc/object</code>目录中，关于本机的相关配置位于文件<code>localhost.cfg</code>中。<br>对于Nagios配置文件进行检查可以通过<code>sudo /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg</code>。<br><em>cgi.cfg</em>文件中还需要设定允许哪些用户运行外部命令。<br>将新添加的Nagios管理员用户添加到<em>cgi.cfg</em>文件中，否则Nagios Web会提示用户权限的错误。</p>
+<h3 id="添加远程监控主机"><a href="#添加远程监控主机" class="headerlink" title="添加远程监控主机"></a>添加远程监控主机</h3><ol>
+<li><p>使用localhost主机的模板文件，添加1个Linux服务器：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># 复制localhost模板</span><br><span class="line">cd /usr/local/nagios/etc/object</span><br><span class="line">sudo cp localhost.cfg v-centos.cfg</span><br><span class="line"># 编辑复制的配置文件</span><br><span class="line">sudo vi v-centos.cfg</span><br><span class="line"># 按照实际情况修改文件</span><br><span class="line"># 模板,根据需要从template.cfg中选择或添加</span><br><span class="line">use 		linux-server</span><br><span class="line">hostname 	v-centos</span><br><span class="line">address		192.168.0.91</span><br><span class="line"># hostgroup和service根据实际情况修改</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将新增的配置文件添加到<em>nagios.cfg</em>文件中<br><code>echo &quot;cfg_file=/usr/local/nagios/etc/objects/v-centos.cfg&quot; &gt; /usr/local/nagios/etc/nagios.cfg</code></p>
+</li>
+<li>检查Nagios配置文件<br><code>sudo /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg</code></li>
+<li>配置文件无错误，重启Nagios服务<br><code>sudo systemctl restart nagios</code></li>
+<li><p>在远程主机中开启<strong>5666</strong>端口</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">su root</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.92&quot; port port=&quot;5666&quot; protocol=&quot;tcp&quot; accept&apos; --permanent</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule family=&quot;ipv4&quot; source address=&quot;192.168.0.92&quot; port port=&quot;5666&quot; protocol=&quot;udp&quot; accept&apos; --permanent</span><br><span class="line">firewall-cmd -reload</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>打开Nagios Web界面查看新增的主机<br><img src="https://s2.ax1x.com/2019/05/01/EJ5PVs.png" alt="remote_host"></p>
+</li>
+<li>修改检查ssh的默认端口<br>在我们新增的主机上，ssh的端口被修改为9022,在Nagios默认的命令中，是使用默认的22端口来检查。<br>修改的方法是在命令后添加<code>!-p 9022</code>即可。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># 修改v-centos.cfg文件</span><br><span class="line"># 定位到检查ssh的service</span><br><span class="line">define service &#123;</span><br><span class="line"></span><br><span class="line">    use                     local-service          </span><br><span class="line">    host_name               v-centos</span><br><span class="line">    service_description     SSH</span><br><span class="line">    check_command           check_ssh!-p 9022</span><br><span class="line">    notifications_enabled   0</span><br><span class="line">&#125;</span><br><span class="line"># 重启Nagios服务</span><br><span class="line">sudo systemctl restart nagios</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p><img src="https://s2.ax1x.com/2019/05/01/EJTJzV.png" alt="ssh_status"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a href="https://support.nagios.com/kb/article/nagios-core-installing-nagios-core-from-source-96.html#CentOS" target="_blank" rel="noopener">Install Nagios on CentOS7</a></li>
+<li><a href="https://lowendbox.com/blog/remote-server-monitoring-with-nagios/" target="_blank" rel="noopener">Nagiso remote monitor</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2019/05/01/centos_install_nagios.html" title="CentOS源码安装、配置Nagios+Plugins">https://kim1024.github.io/2019/05/01/centos_install_nagios.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/nagios/" rel="tag"><i class="fa fa-tag"></i> nagios</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/04/30/openswan_ipsec.html" rel="next" title="CentOS下使用openswan配置IPsec">
+                  <i class="fa fa-chevron-left"></i> CentOS下使用openswan配置IPsec
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/05/03/nagios_plugins_check_mysql_health.html" rel="prev" title="Nagios使用check_mysql_health插件监控Mysql主机">
+                  Nagios使用check_mysql_health插件监控Mysql主机 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#禁用SELinux"><span class="nav-number">1.</span> <span class="nav-text">禁用SELinux</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装Nagios"><span class="nav-number">2.</span> <span class="nav-text">安装Nagios</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装Nagios-plugins"><span class="nav-number">3.</span> <span class="nav-text">安装Nagios-plugins</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置Nagios"><span class="nav-number">4.</span> <span class="nav-text">配置Nagios</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基本信息"><span class="nav-number">4.1.</span> <span class="nav-text">基本信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#添加远程监控主机"><span class="nav-number">4.2.</span> <span class="nav-text">添加远程监控主机</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

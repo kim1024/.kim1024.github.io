@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="sed工具 sed是一个管线命令，可以分析标准输入，而且可以将数据取代、删除、新增、撷取特定行; sed工具的命令格式：sed [-nefre] &amp;#39;[n1,n2][command]&amp;#39; -n : 使用安静模式silent,在sed的一般应用中，所有来自标准输入的数据都会列到屏幕中，如果使用了安静模式，只有经过sed处理的那一行数据才会被输出到屏幕中; -e : 直接在命令行界面上进行">
+<meta name="keywords" content="Shell,sed,awk">
+<meta property="og:type" content="article">
+<meta property="og:title" content="sed-awk-printf-diff-cmp工具的基础使用">
+<meta property="og:url" content="https://kim1024.github.io/2018/12/07/sed-awk-printf-diff-cmp.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="sed工具 sed是一个管线命令，可以分析标准输入，而且可以将数据取代、删除、新增、撷取特定行; sed工具的命令格式：sed [-nefre] &amp;#39;[n1,n2][command]&amp;#39; -n : 使用安静模式silent,在sed的一般应用中，所有来自标准输入的数据都会列到屏幕中，如果使用了安静模式，只有经过sed处理的那一行数据才会被输出到屏幕中; -e : 直接在命令行界面上进行">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s1.ax1x.com/2018/12/07/F1TwZR.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/12/07/F1biZ9.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/12/07/F1jP4s.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/12/07/F1j7rT.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.682Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="sed-awk-printf-diff-cmp工具的基础使用">
+<meta name="twitter:description" content="sed工具 sed是一个管线命令，可以分析标准输入，而且可以将数据取代、删除、新增、撷取特定行; sed工具的命令格式：sed [-nefre] &amp;#39;[n1,n2][command]&amp;#39; -n : 使用安静模式silent,在sed的一般应用中，所有来自标准输入的数据都会列到屏幕中，如果使用了安静模式，只有经过sed处理的那一行数据才会被输出到屏幕中; -e : 直接在命令行界面上进行">
+<meta name="twitter:image" content="https://s1.ax1x.com/2018/12/07/F1TwZR.png">
+  <link rel="canonical" href="https://kim1024.github.io/2018/12/07/sed-awk-printf-diff-cmp">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>sed-awk-printf-diff-cmp工具的基础使用 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2018/12/07/sed-awk-printf-diff-cmp.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">sed-awk-printf-diff-cmp工具的基础使用
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2018-12-07 14:12:01" itemprop="dateCreated datePublished" datetime="2018-12-07T14:12:01+08:00">2018-12-07</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Shell/" itemprop="url" rel="index"><span itemprop="name">Shell</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2018/12/07/sed-awk-printf-diff-cmp.html" class="post-meta-item leancloud_visitors" data-flag-title="sed-awk-printf-diff-cmp工具的基础使用" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="sed工具"><a href="#sed工具" class="headerlink" title="sed工具"></a>sed工具</h2><ul>
+<li>sed是一个管线命令，可以分析标准输入，而且可以将数据取代、删除、新增、撷取特定行;</li>
+<li>sed工具的命令格式：<code>sed [-nefre] &#39;[n1,n2][command]&#39;</code><ul>
+<li><code>-n</code> : 使用安静模式silent,在sed的一般应用中，所有来自标准输入的数据都会列到屏幕中，如果使用了安静模式，只有经过sed处理的那一行数据才会被输出到屏幕中;</li>
+<li><code>-e</code> : 直接在命令行界面上进行sed的动作编辑;</li>
+<li><code>-f</code> : 直接将sed的动作写在一个文件内，使用该参数指定文件路径名称;</li>
+<li><code>-r</code> : sed动作支持的是延伸型正则表达式，不使用参数，默认使用基础正则表达式语法;</li>
+<li><code>-i</code> ： 直接修改读取的文件内容，而不是由屏幕输出</li>
+<li><code>n1,n2</code> : 选择进行动作的行数，连同后接的命令需要用单引号括住</li>
+<li>command中可以使用的命令有：<ul>
+<li><code>a</code> 新增到下一行，后接字符串,新增多行的，需要在每行最后添加换行符号<code>\</code>在最后一行后新增内容<code>sed -i &#39;$a new add content&#39; filename</code></li>
+<li><code>c</code> 取代n1,n2之间的行，后接字符串,ex: nl ~/test | sed ‘2,5c This is a replace contend’`使用This is a replace contend取代2-5行的全部内容</li>
+<li><code>d</code> 删除,删除空白行<code>sed &#39;/^$/d&#39;</code></li>
+<li><code>i</code> 插入到上一行，后接字符串</li>
+<li><code>p</code> 打印输出,可以用于取出特定行的内容,ex: <code>nl /etc/shadow | sed -n &#39;2,5p&#39;</code></li>
+<li><code>s</code> 取代，直接进行取代的工作，格式<code>s/要取代的字符/新字符/g</code></li>
+<li>使用sed工具取出eth0的ip地址<code>ip addr | grep &#39;eth0$&#39;</code> | sed ‘.<em>inet.//g’ | sed ‘s/\24.</em>$//g’</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/12/07/F1TwZR.png" alt="sed-ip-addr"></p>
+<a id="more"></a>
+<h2 id="printf格式化打印"><a href="#printf格式化打印" class="headerlink" title="printf格式化打印"></a>printf格式化打印</h2><ul>
+<li>命令格式<code>printf &#39;format&#39; content</code><ul>
+<li>打印格式<ul>
+<li><code>\a</code> 警告声音输出</li>
+<li><code>\b</code> 倒退键backspace</li>
+<li><code>\f</code> 清除屏幕form feed</li>
+<li><code>\n</code> 输出新行</li>
+<li><code>\r</code> Enter键</li>
+<li><code>\t</code> 水平Tab键</li>
+<li><code>\v</code> 垂直Tab键 </li>
+<li><code>\xnn</code> 将2位数字nn转换为字符</li>
+<li><code>%ns</code> n个字符</li>
+<li><code>%ni</code> n个整数    </li>
+<li><code>%N.nf</code> 浮点数全长N为，其中n个小数位，1位小数点，整数位N-n-1</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="awk工具"><a href="#awk工具" class="headerlink" title="awk工具"></a>awk工具</h2><ul>
+<li>awk工具将一行中的数据分成多段进行处理，默认的分段分割符是<strong>空白格或Tab</strong>，以行为1次处理单位，以字段为最小的处理单位，命令格式<code>awk &#39;option1{command} option2{command}&#39; filename</code></li>
+<li><p>awk的变量</p>
+<ul>
+<li><code>$n</code> n代表数字，表示一行中的第n个字段，如果为0表示整行</li>
+<li><code>NF</code> 内置变量，每行拥有的字段总数</li>
+<li><code>NR</code> 内置变量，当前处理行</li>
+<li><code>FS</code> 内置变量，目前的分割字符，默认是空白格</li>
+</ul>
+</li>
+<li><p>获取last的前5行数据的第一个字段名称，并输出当前行和当前行的字段总和<code>last -n 5 | sed &#39;6,7d&#39; | awk &#39;{prinft $1 &quot;\t linnum:&quot; NR &quot;\t fnum:&quot; NF &quot;\t&quot;}&#39;</code></p>
+</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/12/07/F1biZ9.png" alt="last-sed-awk"></p>
+<ul>
+<li>awk逻辑运算<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. &gt;  # 大于</span><br><span class="line">2. &lt;  # 小于</span><br><span class="line">3. &gt;= # 大于等于</span><br><span class="line">4. &lt;= # 小于等于</span><br><span class="line">5. == # 等于</span><br><span class="line">6. != # 不等于</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="文件比对工具"><a href="#文件比对工具" class="headerlink" title="文件比对工具"></a>文件比对工具</h2><ul>
+<li>diff<ul>
+<li>diff工具常用来比对2个文件之间的差异，并且是以行为单位的，一般是用在ASCII纯文本文件的对比，除了比对文件外，diff还可以用来比对目录之间的差异。命令格式<code>diff [-bBi] from-file to-file</code><ul>
+<li><code>-b</code> 忽略一行中，仅有多个空白的差异</li>
+<li><code>-B</code> 忽略空白行的差异</li>
+<li><code>-i</code> 忽略大小写差异</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/12/07/F1jP4s.png" alt="diff-file"></p>
+<ul>
+<li>cmp<ul>
+<li>cmp以字节为单位比对，命令格式：<code>cmp [-l] file1 file2</code><ul>
+<li><code>-l</code> 将所有的不同点的字节都列出，默认只输出第一个发现的不同点</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/12/07/F1j7rT.png" alt="cmp-diff"></p>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2018/12/07/sed-awk-printf-diff-cmp.html" title="sed-awk-printf-diff-cmp工具的基础使用">https://kim1024.github.io/2018/12/07/sed-awk-printf-diff-cmp.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/Shell/" rel="tag"><i class="fa fa-tag"></i> Shell</a>
+            
+              <a href="/tags/sed/" rel="tag"><i class="fa fa-tag"></i> sed</a>
+            
+              <a href="/tags/awk/" rel="tag"><i class="fa fa-tag"></i> awk</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2018/12/07/linux-shell-regalur.html" rel="next" title="Shell万用字符与特殊符号">
+                  <i class="fa fa-chevron-left"></i> Shell万用字符与特殊符号
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2018/12/09/shell-del-replace.html" rel="prev" title="变量内容的删除、取代与替换">
+                  变量内容的删除、取代与替换 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#sed工具"><span class="nav-number">1.</span> <span class="nav-text">sed工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#printf格式化打印"><span class="nav-number">2.</span> <span class="nav-text">printf格式化打印</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#awk工具"><span class="nav-number">3.</span> <span class="nav-text">awk工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#文件比对工具"><span class="nav-number">4.</span> <span class="nav-text">文件比对工具</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

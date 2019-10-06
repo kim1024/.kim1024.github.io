@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="使用Github和Hexo搭建个人网站 概述 Hexo使用Markdown解析文章，能够在几秒内利用主题生成静态网页； Github是世界上最大的代码存放网站和开源社区，目前已经被微软收购； 利用Hexo生成静态网页，将生成的静态网页发布到Github上，已完成个人网站所具有的功能。   系统信息 系统：Debian9.5 NVM：V11.0.0 NPM：6.4.1 Nodejs：11.0.0">
+<meta name="keywords" content="Hexo,Github,个人网站">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用Github和Hexo搭建个人网站">
+<meta property="og:url" content="https://kim1024.github.io/2018/10/30/github-hexo-website.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="使用Github和Hexo搭建个人网站 概述 Hexo使用Markdown解析文章，能够在几秒内利用主题生成静态网页； Github是世界上最大的代码存放网站和开源社区，目前已经被微软收购； 利用Hexo生成静态网页，将生成的静态网页发布到Github上，已完成个人网站所具有的功能。   系统信息 系统：Debian9.5 NVM：V11.0.0 NPM：6.4.1 Nodejs：11.0.0">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s1.ax1x.com/2018/10/29/ig0j56.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/10/30/i2czUH.md.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/10/30/i2gC8I.md.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/10/30/i2gixP.md.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/10/30/i2gZVg.md.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/10/30/i2gkKf.md.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/10/30/i2g5sf.md.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/10/30/i2gIL8.md.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.683Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用Github和Hexo搭建个人网站">
+<meta name="twitter:description" content="使用Github和Hexo搭建个人网站 概述 Hexo使用Markdown解析文章，能够在几秒内利用主题生成静态网页； Github是世界上最大的代码存放网站和开源社区，目前已经被微软收购； 利用Hexo生成静态网页，将生成的静态网页发布到Github上，已完成个人网站所具有的功能。   系统信息 系统：Debian9.5 NVM：V11.0.0 NPM：6.4.1 Nodejs：11.0.0">
+<meta name="twitter:image" content="https://s1.ax1x.com/2018/10/29/ig0j56.png">
+  <link rel="canonical" href="https://kim1024.github.io/2018/10/30/github-hexo-website">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>使用Github和Hexo搭建个人网站 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2018/10/30/github-hexo-website.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">使用Github和Hexo搭建个人网站
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2018-10-30 10:29:19" itemprop="dateCreated datePublished" datetime="2018-10-30T10:29:19+08:00">2018-10-30</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/other/" itemprop="url" rel="index"><span itemprop="name">other</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2018/10/30/github-hexo-website.html" class="post-meta-item leancloud_visitors" data-flag-title="使用Github和Hexo搭建个人网站" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="使用Github和Hexo搭建个人网站"><a href="#使用Github和Hexo搭建个人网站" class="headerlink" title="使用Github和Hexo搭建个人网站"></a>使用Github和Hexo搭建个人网站</h1><ul>
+<li>概述<ul>
+<li>Hexo使用Markdown解析文章，能够在几秒内利用主题生成静态网页；</li>
+<li>Github是世界上最大的代码存放网站和开源社区，目前已经被微软收购；</li>
+<li>利用Hexo生成静态网页，将生成的静态网页发布到Github上，已完成个人网站所具有的功能。</li>
+</ul>
+</li>
+<li>系统信息<ul>
+<li>系统：Debian9.5</li>
+<li>NVM：V11.0.0</li>
+<li>NPM：6.4.1</li>
+<li>Nodejs：11.0.0</li>
+</ul>
+</li>
+</ul>
+<a id="more"></a>
+<h2 id="登录Github"><a href="#登录Github" class="headerlink" title="登录Github"></a>登录Github</h2><ol>
+<li><p>登录Github，新建一个repository，格式应为：<code>xxxx.github.io</code> 其中xxx代表你的用户名</p>
+<p><a href="https://imgchr.com/i/ig0j56" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/10/29/ig0j56.png" alt="New Repository">  </a> </p>
+<h2 id="安装Nodejs和Git"><a href="#安装Nodejs和Git" class="headerlink" title="安装Nodejs和Git"></a>安装Nodejs和Git</h2></li>
+<li><p>首先需要在本机上安装<code>Node.js</code>和<code>Git</code></p>
+<ol>
+<li>安装nvm</li>
+</ol>
+<ul>
+<li><code>aria2c https://raw.github.com/creationix/nvm/v0.33.11/install.sh &amp;&amp; chmod +x install.sh &amp;&amp; ./install.sh</code></li>
+</ul>
+<ol start="2">
+<li>安装Nodejs</li>
+</ol>
+<ul>
+<li><code>nvm install stable</code></li>
+</ul>
+<ol start="3">
+<li>安装hexo</li>
+</ol>
+<ul>
+<li><code>npm install hexo-cli -g</code> </li>
+</ul>
+</li>
+<li>安装Git<ul>
+<li><code>apt install git-core</code></li>
+</ul>
+</li>
+</ol>
+<ol start="4">
+<li><p>创建一个文件夹，文件夹名称与第1步中新建的repository相同</p>
+<ul>
+<li><code>mkdir kim1024.github.io &amp;&amp; cd kim1024.github.io</code></li>
+</ul>
+</li>
+<li><p>切换到刚创建的文件夹中，创建<code>.git</code>文件</p>
+<ul>
+<li><code>git config --global user.name &quot;kim1024&quot;</code> # replace kim1024 with your git username</li>
+<li><code>git config --global user.email &quot;email_address&quot;</code></li>
+</ul>
+</li>
+<li><p>如果需要使用SSH秘钥，则需要创建秘钥对</p>
+<ul>
+<li><code>ssh-keygen -t rsa -C &quot;email_address -f ./&quot;</code></li>
+<li>在目录下找到刚创建的秘钥对，其中一个文件后缀格式为<code>.pub</code>,这就会刚刚创建的加密公钥；<ul>
+<li><code>cat gir_rsa.pub</code> # 会看到一串字符，以ssh-rsa开头，以邮箱地址结尾，复制全部的字符串；</li>
+<li><a href="https://imgchr.com/i/i2czUH" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/10/30/i2czUH.md.png" alt="i2czUH.md.png"> </a> </li>
+</ul>
+</li>
+<li>打开<code>github.com</code>,登录自己的账号，点击右上角的头像，找到<code>Setting</code> ，然后打开右侧的<code>SSH and GPG Keys</code>，点击<code>New SSH Key</code>，然后命名，将复制的字符串粘贴到下方的空白处，提交即可；<ul>
+<li><a href="https://imgchr.com/i/i2gC8I" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/10/30/i2gC8I.md.png" alt="i2gC8I.md.png"></a> </li>
+<li><a href="https://imgchr.com/i/i2gixP" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/10/30/i2gixP.md.png" alt="i2gixP.md.png"></a> </li>
+</ul>
+</li>
+<li>添加成功后，在本机上进行ssh测试连接<code>ssh -i ./gir_rsa git@github.com</code>,当出现如下提示时，表示ssh连接成功；</li>
+<li>还可以通过<code>ssh-add</code> 命令将生成的密钥添加到ssh-agent中，在添加之前，需要修改key的权限<ul>
+<li><a href="https://imgchr.com/i/i2gZVg" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/10/30/i2gZVg.md.png" alt="i2gZVg.md.png"></a> </li>
+</ul>
+</li>
+</ul>
+<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2></li>
+<li><p>安装hexo,进入创建的<code>kim1024.github.io</code>文件夹中，依次执行以下命令：</p>
+<ul>
+<li><p><code>hexo init ./</code> # hexo初始化</p>
+<ul>
+<li><a href="https://imgchr.com/i/i2gkKf" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/10/30/i2gkKf.md.png" alt="i2gkKf.md.png"></a> </li>
+</ul>
+</li>
+<li><p>初始化完成后，在文件夹中会创建多个文件夹和文件，找到文件<code>_config.yml</code>进行编辑</p>
+<ul>
+<li><p><code>vi _config.yml</code> # 根据自己的需要修改其中的项目</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">deploy: </span><br><span class="line">  type: git</span><br><span class="line">  repo: git@github.com:kim1024/kim1024.github.io.git # replace this url with your own ssh url</span><br><span class="line">  branch: master # 必须使用master，使用其他分支会出现问题</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编辑完成后保存</p>
+</li>
+</ul>
+</li>
+<li><p><code>hexo g</code></p>
+<ul>
+<li><a href="https://imgchr.com/i/i2g5sf" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/10/30/i2g5sf.md.png" alt="i2g5sf.md.png"></a></li>
+</ul>
+</li>
+<li><p><code>hexo d</code> # 发布，使用ssh认证，避免了每次发布都需要输入用户名和密码的麻烦</p>
+<ul>
+<li><a href="https://imgchr.com/i/i2gIL8" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/10/30/i2gIL8.md.png" alt="i2gIL8.md.png"></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2018/10/30/github-hexo-website.html" title="使用Github和Hexo搭建个人网站">https://kim1024.github.io/2018/10/30/github-hexo-website.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/Hexo/" rel="tag"><i class="fa fa-tag"></i> Hexo</a>
+            
+              <a href="/tags/Github/" rel="tag"><i class="fa fa-tag"></i> Github</a>
+            
+              <a href="/tags/个人网站/" rel="tag"><i class="fa fa-tag"></i> 个人网站</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2018/10/30/linux-windowsxp.html" rel="prev" title="Linux下快速创建WindowsXP模式">
+                  Linux下快速创建WindowsXP模式 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#使用Github和Hexo搭建个人网站"><span class="nav-number">1.</span> <span class="nav-text">使用Github和Hexo搭建个人网站</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#登录Github"><span class="nav-number">1.1.</span> <span class="nav-text">登录Github</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装Nodejs和Git"><span class="nav-number">1.2.</span> <span class="nav-text">安装Nodejs和Git</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装Hexo"><span class="nav-number">1.3.</span> <span class="nav-text">安装Hexo</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

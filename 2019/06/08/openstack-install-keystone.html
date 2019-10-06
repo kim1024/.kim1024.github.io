@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="基本信息">
+<meta name="keywords" content="OpenStack,keystone">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CentOS部署OpenStack过程-基础和认证服务">
+<meta property="og:url" content="https://kim1024.github.io/2019/06/08/openstack-install-keystone.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="基本信息">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s2.ax1x.com/2019/06/06/VaSqiT.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/06/08/VBMfd1.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/06/08/VBMhIx.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/06/08/VBmR4U.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/06/08/VBm5v9.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/06/08/VBmvgH.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/06/08/VBnZvj.png">
+<meta property="og:image" content="https://s2.ax1x.com/2019/06/08/VBK6HI.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.674Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CentOS部署OpenStack过程-基础和认证服务">
+<meta name="twitter:description" content="基本信息">
+<meta name="twitter:image" content="https://s2.ax1x.com/2019/06/06/VaSqiT.png">
+  <link rel="canonical" href="https://kim1024.github.io/2019/06/08/openstack-install-keystone">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>CentOS部署OpenStack过程-基础和认证服务 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2019/06/08/openstack-install-keystone.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">CentOS部署OpenStack过程-基础和认证服务
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-06-08 09:59:38" itemprop="dateCreated datePublished" datetime="2019-06-08T09:59:38+08:00">2019-06-08</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/OpenStack/" itemprop="url" rel="index"><span itemprop="name">OpenStack</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2019/06/08/openstack-install-keystone.html" class="post-meta-item leancloud_visitors" data-flag-title="CentOS部署OpenStack过程-基础和认证服务" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="基本信息"><a href="#基本信息" class="headerlink" title="基本信息"></a>基本信息</h2><p><img src="https://s2.ax1x.com/2019/06/06/VaSqiT.png" alt="Openstack结构图"><br><img src="https://s2.ax1x.com/2019/06/08/VBMfd1.png" alt="OpenStack网络结构"><br><img src="https://s2.ax1x.com/2019/06/08/VBMhIx.png" alt="OpenStack控制节点服务"><br><a id="more"></a></p>
+<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><h3 id="启用网络事件协议NTP"><a href="#启用网络事件协议NTP" class="headerlink" title="启用网络事件协议NTP"></a>启用网络事件协议NTP</h3><ol>
+<li><p>控制节点</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># install</span><br><span class="line">sudo yum install chrony -y</span><br><span class="line"># config</span><br><span class="line">sudo vi /etc/chrony.conf</span><br><span class="line"># modify</span><br><span class="line">server Server_Name or IP iburst</span><br><span class="line">allow 192.168.122.0/24</span><br><span class="line"># start service</span><br><span class="line">sudo systemctl start chronyd</span><br><span class="line">sudo systemctl enable chronyd</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>计算节点</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># install</span><br><span class="line">sudo yum install chrony -y</span><br><span class="line"># config</span><br><span class="line">sudo vi /etc/chrony.conf</span><br><span class="line"># modify 注释掉除server外的字段</span><br><span class="line">server cont_server iburst</span><br><span class="line"># start service</span><br><span class="line">sudo systemctl start chronyd</span><br><span class="line">sudo systemctl enable chronyd</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="安装OpenStack库"><a href="#安装OpenStack库" class="headerlink" title="安装OpenStack库"></a>安装OpenStack库</h2><ol>
+<li>安装OpenStack库<br><code>sudo yum install centos-release-openstack-ocata -y</code></li>
+<li>安装OpenStack客户端<br><code>sudo yum install python-openstackclient -y</code></li>
+<li>安装SELinux策略文件<br><code>sudo yum install openstack-selinux -y</code></li>
+</ol>
+<h2 id="数据库"><a href="#数据库" class="headerlink" title="数据库"></a>数据库</h2><h3 id="MySQL数据库"><a href="#MySQL数据库" class="headerlink" title="MySQL数据库"></a>MySQL数据库</h3><p>OpenStack服务使用SQL数据库来存储信息，数据库运行在控制节点上。</p>
+<ol>
+<li>安装软件<br><code>sudo yum install yum install mariadb mariadb-server python2-PyMySQL -y</code></li>
+<li><p>配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">cd /etc/my.cnf.d</span><br><span class="line">sudo vi mariadb.cnf</span><br><span class="line"># mysqld part</span><br><span class="line">[mysqld]</span><br><span class="line"># change ip to controller node ip address</span><br><span class="line">bind-address=192.168.122.200 </span><br><span class="line"># set store-engine and character</span><br><span class="line">default-storage-engine = innodb</span><br><span class="line">innodb_file_per_table</span><br><span class="line">max_connections = 4096</span><br><span class="line">collation-server = utf8_general_ci</span><br><span class="line">character-set-server = utf8</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># start</span><br><span class="line">sudo systemctl start mariadb</span><br><span class="line">sudo systemctl enable mariadb</span><br><span class="line"># set firewall rule</span><br><span class="line">su root</span><br><span class="line">firewall-cmd --zone=public --add-rich-rule=&apos;rule famliy=ipv4 source address=192.168.122.100 port port=3306 protocol=tcp accept&apos; --permanent</span><br><span class="line">firewall-cmd --reload</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>检查MySQL数据库安全<br><code>mysql_secure_installation</code></p>
+</li>
+</ol>
+<h3 id="NoSQL数据库"><a href="#NoSQL数据库" class="headerlink" title="NoSQL数据库"></a>NoSQL数据库</h3><p>Telemetry服务使用NoSQL数据库来存储信息，该服务运行在控制节点上。</p>
+<ol>
+<li>安装<br><code>sudo yum install mongodb-server mongodb -y</code></li>
+<li><p>配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd /etc</span><br><span class="line">sudo vi mongod.conf</span><br><span class="line"># modfiy</span><br><span class="line">bind_ip=192.168.122.200</span><br><span class="line"># limit log size 128M</span><br><span class="line">smallfiles=true</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># start</span><br><span class="line">sudo systemctl start mongod</span><br><span class="line">sudo systemctl enable mongod</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="消息队列RabbitMQ"><a href="#消息队列RabbitMQ" class="headerlink" title="消息队列RabbitMQ"></a>消息队列RabbitMQ</h3><p>OpenStack使用 <em>message_queue</em> 协调操作和个服务的状态信息。消息队列服务运行在控制节点上。OpenStack支持多种消息队列服务，包括：RabbitMQ、Qpid和ZeroMQ。</p>
+<ol>
+<li>安装<br><code>sudo yum install rabbitmq-server -y</code></li>
+<li><p>启动服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo systemctl start rabbitmq-server</span><br><span class="line">sudo systemctl enable rabbitmq-server</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>添加用户</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># create rabbitmq user with passwd</span><br><span class="line">rabbitmqctl add_user openstack Passwd</span><br><span class="line"># grant privilege</span><br><span class="line">rabbitmqctl set_permissions openstack &quot;.*&quot; &quot;.*&quot; &quot;.*&quot;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="Memcached"><a href="#Memcached" class="headerlink" title="Memcached"></a>Memcached</h3><p>认证服务认证缓存使用Memcached缓存令牌，缓存服务Memcached运行在控制节点上。</p>
+<ol>
+<li>安装<br><code>sudo yum install memcached python-memcached -y</code></li>
+<li>启动服务<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo systemctl start memcached</span><br><span class="line">sudo systemctl enable memcached</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="认证服务"><a href="#认证服务" class="headerlink" title="认证服务"></a>认证服务</h2><p>当openStack服务收到来自用户的请求时，该服务询问Identity服务，验证该用户是否有权限进行此次请求。身份服务包含的组件有：服务器、驱动、模块。<br>在安装认证服务前，需要线创建数据库和管理员令牌。</p>
+<h3 id="安装条件"><a href="#安装条件" class="headerlink" title="安装条件"></a>安装条件</h3><ol>
+<li><p>创建数据库</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># login Mysql</span><br><span class="line">mysql -u root -p</span><br><span class="line"># create keystone database</span><br><span class="line">create database keystone;</span><br><span class="line"># grant privilege on keystone</span><br><span class="line">grant all privileges on keystone.* to &apos;ks_db&apos;@&apos;localhost&apos; identified by &apos;Passwd&apos;;</span><br><span class="line">grant all privileges on keystone.* to &apos;ks_db&apos;@&apos;192.168.122.%&apos; identified by &apos;passwd&apos;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>生成一个随机值在初始配置中作为系统管理员令牌<br><code>openssl rand -hex 10</code><br>记下刚生成的随机码：<code>e7d81bfae3c2884d8ea1</code></p>
+</li>
+</ol>
+<h3 id="安装认证服务"><a href="#安装认证服务" class="headerlink" title="安装认证服务"></a>安装认证服务</h3><ol>
+<li>安装<br><code>sudo yum install openstack-keystone httpd mod_wsgi -y</code><br>使用<code>mod_wsgi</code>来服务认证服务请求，端口号为 <em>5000 35357</em> </li>
+<li><p>配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">cd /etc/keystone</span><br><span class="line">sudo vi keystone.conf</span><br><span class="line"># modify [default]  replace with copybord</span><br><span class="line">admin_token = e7d81bfae3c2884d8ea1</span><br><span class="line"># modify [database] replace db_passwd with mysql database passwd</span><br><span class="line"># replace db_server with db-server-name or ip</span><br><span class="line"># mysql+pymysql://db_user:db_passwd@db-server/db_name</span><br><span class="line">connection = mysql+pymysql://ks_db:db_passwd@db-server/keystone</span><br><span class="line"># modify [token]</span><br><span class="line">provider = fernet</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>初始化身份认证数据库<br><code>su -s /bin/sh -c &quot;keystone-manage db_sync&quot; keystone</code></p>
+</li>
+<li>初始化Fernet Keys<br><code>keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone</code></li>
+</ol>
+<h3 id="配置Apache服务器"><a href="#配置Apache服务器" class="headerlink" title="配置Apache服务器"></a>配置Apache服务器</h3><ol>
+<li>编辑<code>httpd.conf</code>文件<em>/etc/httpd/conf/httpd.conf</em><br><code>ServerName ops-cont</code></li>
+<li><p>创建<code>wsgi-keystone.conf</code>文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">cd /etc/httpd/conf.d &amp;&amp; sudo touch wsgi-keystone.conf</span><br><span class="line"># add</span><br><span class="line">Listen 5000</span><br><span class="line">Listen 35357</span><br><span class="line"></span><br><span class="line">&lt;VirtualHost *:5000&gt;</span><br><span class="line">    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone group=keystone display-name=%&#123;GROUP&#125;</span><br><span class="line">    WSGIProcessGroup keystone-public</span><br><span class="line">    WSGIScriptAlias / /usr/bin/keystone-wsgi-public</span><br><span class="line">    WSGIApplicationGroup %&#123;GLOBAL&#125;</span><br><span class="line">    WSGIPassAuthorization On</span><br><span class="line">    ErrorLogFormat &quot;%&#123;cu&#125;t %M&quot;</span><br><span class="line">    ErrorLog /var/log/httpd/keystone-error.log</span><br><span class="line">    CustomLog /var/log/httpd/keystone-access.log combined</span><br><span class="line"></span><br><span class="line">    &lt;Directory /usr/bin&gt;</span><br><span class="line">        Require all granted</span><br><span class="line">    &lt;/Directory&gt;</span><br><span class="line">&lt;/VirtualHost&gt;</span><br><span class="line"></span><br><span class="line">&lt;VirtualHost *:35357&gt;</span><br><span class="line">    WSGIDaemonProcess keystone-admin processes=5 threads=1 user=keystone group=keystone display-name=%&#123;GROUP&#125;</span><br><span class="line">    WSGIProcessGroup keystone-admin</span><br><span class="line">    WSGIScriptAlias / /usr/bin/keystone-wsgi-admin</span><br><span class="line">    WSGIApplicationGroup %&#123;GLOBAL&#125;</span><br><span class="line">    WSGIPassAuthorization On</span><br><span class="line">    ErrorLogFormat &quot;%&#123;cu&#125;t %M&quot;</span><br><span class="line">    ErrorLog /var/log/httpd/keystone-error.log</span><br><span class="line">    CustomLog /var/log/httpd/keystone-access.log combined</span><br><span class="line"></span><br><span class="line">    &lt;Directory /usr/bin&gt;</span><br><span class="line">        Require all granted</span><br><span class="line">    &lt;/Directory&gt;</span><br><span class="line">&lt;/VirtualHost&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># start</span><br><span class="line">sudo systemctl start httpd</span><br><span class="line">sudo systemctl enable httpd</span><br><span class="line"># add firewall rule</span><br><span class="line">su root</span><br><span class="line">firewall-cmd --zone=public --add-port=80/tcp --permanent</span><br><span class="line">firewall-cmd --zone=public --add-port=5000/tcp --permanent</span><br><span class="line">firewall-cmd --zone=public --add-port=35357/tcp --permanent</span><br><span class="line">firewall-cmd --reload</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="创建服务实体和API端点"><a href="#创建服务实体和API端点" class="headerlink" title="创建服务实体和API端点"></a>创建服务实体和API端点</h3><p>身份认证服务提供服务的目录和他们的位置，每个添加到OpenStack环境中的服务在目录中需要一个<em>service</em>实体和一些<em>API_endpoints</em>。</p>
+<h4 id="安装条件-1"><a href="#安装条件-1" class="headerlink" title="安装条件"></a>安装条件</h4><p>默认情况下，身份认证服务数据库不包含支持传统认证和目录服务的信息，需要使用临时身份验证令牌来初始化服务实体和API端点。</p>
+<ol>
+<li>配置认证令牌为环境变量<br><code>export OS_TOKEN=e7d81bfae3c2884d8ea1</code></li>
+<li>配置端点URL<br><code>export OS_URL=http://ops-cont:35357/v3</code></li>
+<li>配置认证API版本<br><code>export OS_IDENTITY_API_VERSION=3</code></li>
+</ol>
+<h4 id="创建服务实体和API端点-1"><a href="#创建服务实体和API端点-1" class="headerlink" title="创建服务实体和API端点"></a>创建服务实体和API端点</h4><p>在OpenStack环境中，认证服务管理服务目录，使用这个目录来决定环境中可用的服务。<br>OpenStack使用三个API端点代表每种服务：<code>admin</code>,<code>internal</code>，<code>public</code>。默认情况下，管理API端点允许修改用户和租户而内部和公众APIs不允许这些操作。<br>公众API是为了让用户管理自己的云在互联网上是可见的;内部API网络回被限制在包含OpenStack服务的主机上。</p>
+<ol>
+<li>创建服务实体和身份认证服务<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">openstack service create \</span><br><span class="line">--name keystone --description &quot;OpenStack Identity&quot; identity</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p><img src="https://s2.ax1x.com/2019/06/08/VBmR4U.png" alt="openstack-create-service"></p>
+<ol start="2">
+<li>所有端点和默认<code>RegionOne</code>区域都使用管理网络<br><code>identity</code>与创建的服务实体认证中的<code>identity</code>对应<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># create public API</span><br><span class="line">openstack endpoint create --region RegiOne \</span><br><span class="line">identity public http://ops-cont:5000/v3</span><br><span class="line"># create internal API</span><br><span class="line">openstack endpoint create --region RegionOne \</span><br><span class="line">identity internal http://ops-cont:5000/v3</span><br><span class="line"># create admin API</span><br><span class="line">openstack endpoint create --region RegionOne \</span><br><span class="line">identity admin http://ops-cont:5000/v3</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p><img src="https://s2.ax1x.com/2019/06/08/VBm5v9.png" alt="create-region"></p>
+<h4 id="创建域、项目、用户和角色"><a href="#创建域、项目、用户和角色" class="headerlink" title="创建域、项目、用户和角色"></a>创建域、项目、用户和角色</h4><p>创建的角色都映射到每个OpenStack服务配置文件目录下的<code>policy.json</code>文件中。</p>
+<ol>
+<li><p>创见域<code>default</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openstack domain create --description &quot;Default Domain&quot; default</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建项目、用户和角色</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># 创建admin项目,项目要包含在域中</span><br><span class="line">openstack project create --domain default \</span><br><span class="line">--description &quot;Admin Project&quot; admin</span><br><span class="line"># 创建用户,输入用户密码</span><br><span class="line">openstack user create --domain default \</span><br><span class="line">--password-prompt admin</span><br><span class="line"># 创建角色</span><br><span class="line">openstack role create admin</span><br><span class="line"># 将角色添加到用户上,执行后无输出</span><br><span class="line">openstack role add --project admin --user admin admin</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p><img src="https://s2.ax1x.com/2019/06/08/VBmvgH.png" alt="openstack-create-domain-project-user-role"></p>
+<ol start="3">
+<li>创建每个服务独有用户的service项目<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">openstack project create --domain default \</span><br><span class="line">--description &quot;Service Project&quot; service</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p><img src="https://s2.ax1x.com/2019/06/08/VBnZvj.png" alt="openstack-project-create-service"></p>
+<ol start="4">
+<li>创建非管理无特权的项目和用户<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># 创建demo项目</span><br><span class="line">openstack project create --domain default \</span><br><span class="line">--description &quot;Demo Project&quot; demo</span><br><span class="line"># 创建用户</span><br><span class="line">openstack user create --domain default \</span><br><span class="line">--password-prompt demo</span><br><span class="line"># 创建角色</span><br><span class="line">openstack role create user</span><br><span class="line"># 将角色添加到用户上</span><br><span class="line">openstack role add --project demo --user demo user</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h4 id="验证操作"><a href="#验证操作" class="headerlink" title="验证操作"></a>验证操作</h4><p>在安装其他服务之前需要在控制节点上确认身份认证服务。</p>
+<ol>
+<li><p>关闭临时认证令牌服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd /etc/keystone</span><br><span class="line">vi keystone-paste.ini</span><br><span class="line"># remove admin_token_auth from below</span><br><span class="line">[pipeline:public_api]</span><br><span class="line">[pipiline:admin_api]</span><br><span class="line">[pipeline:api_v3]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>重置环境变量<br><code>unset OS_URL OS_TOKEN</code></p>
+</li>
+<li><p>请求用户admin认证令牌，输入用户认证密码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">openstack --os-auth-url http://ops-cont:35357/v3 \</span><br><span class="line">--os-project-domain-name default \</span><br><span class="line">--os-user-domain-name default \</span><br><span class="line">--os-project-name admin \</span><br><span class="line">--os-username admin token issue</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>请求用户demo认证令牌，注意与用户admin区分端口号</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">openstack --os-auth-url http://ops-cont:5000/v3 \</span><br><span class="line">--os-project-domain-name default \</span><br><span class="line">--os-user-domain-name default \</span><br><span class="line">--os-project-name demo \</span><br><span class="line">--os-username demo token issue</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p><img src="https://s2.ax1x.com/2019/06/08/VBK6HI.png" alt="openstack-user-auth-token"></p>
+<h4 id="创建环境脚本"><a href="#创建环境脚本" class="headerlink" title="创建环境脚本"></a>创建环境脚本</h4><ol>
+<li><p>创建admin脚本<code>admin-openrc</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">export OS_PROJECT_DOMAIN_NAME=default</span><br><span class="line">export OS_USER_DOMAIN_NAME=default</span><br><span class="line">export OS_PROJECT_NAME=admin</span><br><span class="line">export OS_USERNAME=admin</span><br><span class="line">export OS_PASSWORD=user_passwd</span><br><span class="line">export OS_AUTH_URL=http://ops-cont:35357/v3</span><br><span class="line">export OS_IDENTITY_API_VERSION=3</span><br><span class="line">export OS_IMAGE_API_VERSION=2</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建demo脚本<code>demo-openrc</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">export OS_PROJECT_DOMAIN_NAME=default</span><br><span class="line">export OS_USER_DOMAIN_NAME=default</span><br><span class="line">export OS_PROJECT_NAME=demo</span><br><span class="line">export OS_USERNAME=demo</span><br><span class="line">export OS_PASSWORD=user_passwd</span><br><span class="line">export OS_AUTH_URL=http://ops-cont:5000/v3</span><br><span class="line">export OS_IDENTITY_API_VERSION=3</span><br><span class="line">export OS_IMAGE_API_VERSION=2</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使用脚本</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">. admin-openrc</span><br><span class="line">openstack token issue</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>1.<a href="https://docs.openstack.org/mitaka/zh_CN/install-guide-rdo/" target="_blank" rel="noopener">OpenStack-DOC</a></p>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2019/06/08/openstack-install-keystone.html" title="CentOS部署OpenStack过程-基础和认证服务">https://kim1024.github.io/2019/06/08/openstack-install-keystone.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/OpenStack/" rel="tag"><i class="fa fa-tag"></i> OpenStack</a>
+            
+              <a href="/tags/keystone/" rel="tag"><i class="fa fa-tag"></i> keystone</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/06/04/kvm-bridge-vlan.html" rel="next" title="CentOS-KVM配置Bridge-Vlan">
+                  <i class="fa fa-chevron-left"></i> CentOS-KVM配置Bridge-Vlan
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/06/08/openstack-install-glance.html" rel="prev" title="CentOS部署OpenStack过程-镜像服务Glance">
+                  CentOS部署OpenStack过程-镜像服务Glance <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本信息"><span class="nav-number">1.</span> <span class="nav-text">基本信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#步骤"><span class="nav-number">2.</span> <span class="nav-text">步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#启用网络事件协议NTP"><span class="nav-number">2.1.</span> <span class="nav-text">启用网络事件协议NTP</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装OpenStack库"><span class="nav-number">3.</span> <span class="nav-text">安装OpenStack库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库"><span class="nav-number">4.</span> <span class="nav-text">数据库</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#MySQL数据库"><span class="nav-number">4.1.</span> <span class="nav-text">MySQL数据库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NoSQL数据库"><span class="nav-number">4.2.</span> <span class="nav-text">NoSQL数据库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息队列RabbitMQ"><span class="nav-number">4.3.</span> <span class="nav-text">消息队列RabbitMQ</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memcached"><span class="nav-number">4.4.</span> <span class="nav-text">Memcached</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#认证服务"><span class="nav-number">5.</span> <span class="nav-text">认证服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装条件"><span class="nav-number">5.1.</span> <span class="nav-text">安装条件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装认证服务"><span class="nav-number">5.2.</span> <span class="nav-text">安装认证服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置Apache服务器"><span class="nav-number">5.3.</span> <span class="nav-text">配置Apache服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建服务实体和API端点"><span class="nav-number">5.4.</span> <span class="nav-text">创建服务实体和API端点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#安装条件-1"><span class="nav-number">5.4.1.</span> <span class="nav-text">安装条件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建服务实体和API端点-1"><span class="nav-number">5.4.2.</span> <span class="nav-text">创建服务实体和API端点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建域、项目、用户和角色"><span class="nav-number">5.4.3.</span> <span class="nav-text">创建域、项目、用户和角色</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#验证操作"><span class="nav-number">5.4.4.</span> <span class="nav-text">验证操作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建环境脚本"><span class="nav-number">5.4.5.</span> <span class="nav-text">创建环境脚本</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

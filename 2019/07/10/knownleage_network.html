@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="p地址，在网络中对用户是透明的，用户感受不到存在。路由器工作在网络层，根据ip地址寻址，还可以处理TCP/IP协议，具有分割广播的功能交换机工作在数据链路层，根据MAC地址识别，完成封装、转化数据包的功能，不具备分割广播的功能。 TCP/IP和OSI模型TCP/IP从下到上：链路层–网络层–传输层–应用层链路层封装、解封以太网首部;网络层封装、解封IP首部;传输层封装、解封TCP首部;应用层解封、">
+<meta name="keywords" content="网络基础">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络基础知识学习笔记">
+<meta property="og:url" content="https://kim1024.github.io/2019/07/10/knownleage_network.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="p地址，在网络中对用户是透明的，用户感受不到存在。路由器工作在网络层，根据ip地址寻址，还可以处理TCP/IP协议，具有分割广播的功能交换机工作在数据链路层，根据MAC地址识别，完成封装、转化数据包的功能，不具备分割广播的功能。 TCP/IP和OSI模型TCP/IP从下到上：链路层–网络层–传输层–应用层链路层封装、解封以太网首部;网络层封装、解封IP首部;传输层封装、解封TCP首部;应用层解封、">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://images2015.cnblogs.com/blog/849589/201706/849589-20170628002845914-1085185628.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.685Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="网络基础知识学习笔记">
+<meta name="twitter:description" content="p地址，在网络中对用户是透明的，用户感受不到存在。路由器工作在网络层，根据ip地址寻址，还可以处理TCP/IP协议，具有分割广播的功能交换机工作在数据链路层，根据MAC地址识别，完成封装、转化数据包的功能，不具备分割广播的功能。 TCP/IP和OSI模型TCP/IP从下到上：链路层–网络层–传输层–应用层链路层封装、解封以太网首部;网络层封装、解封IP首部;传输层封装、解封TCP首部;应用层解封、">
+<meta name="twitter:image" content="https://images2015.cnblogs.com/blog/849589/201706/849589-20170628002845914-1085185628.png">
+  <link rel="canonical" href="https://kim1024.github.io/2019/07/10/knownleage_network">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>网络基础知识学习笔记 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2019/07/10/knownleage_network.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">网络基础知识学习笔记
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-07-10 17:29:19" itemprop="dateCreated datePublished" datetime="2019-07-10T17:29:19+08:00">2019-07-10</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/学习笔记/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2019/07/10/knownleage_network.html" class="post-meta-item leancloud_visitors" data-flag-title="网络基础知识学习笔记" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>p地址，在网络中对用户是透明的，用户感受不到存在。<br>路由器工作在网络层，根据ip地址寻址，还可以处理TCP/IP协议，具有分割广播的功能<br>交换机工作在数据链路层，根据MAC地址识别，完成封装、转化数据包的功能，不具备分割广播的功能。</p>
+<h2 id="TCP-IP和OSI模型"><a href="#TCP-IP和OSI模型" class="headerlink" title="TCP/IP和OSI模型"></a>TCP/IP和OSI模型</h2><h3 id="TCP-IP"><a href="#TCP-IP" class="headerlink" title="TCP/IP"></a>TCP/IP</h3><p>从下到上：链路层–网络层–传输层–应用层<br>链路层封装、解封以太网首部;网络层封装、解封IP首部;传输层封装、解封TCP首部;应用层解封、封装应用协议。<br><img src="https://images2015.cnblogs.com/blog/849589/201706/849589-20170628002845914-1085185628.png" alt="TCP/IP模型"></p>
+<a id="more"></a>
+<h3 id="OSI"><a href="#OSI" class="headerlink" title="OSI"></a>OSI</h3><p>从下到上：物理层–数据链路层–网络层–运输层–会话层–表示层–应用层<br>在现在流行的网络体系中已经不再使用会话和表示层</p>
+<h2 id="TCP-UDP"><a href="#TCP-UDP" class="headerlink" title="TCP/UDP"></a>TCP/UDP</h2><h3 id="TCP"><a href="#TCP" class="headerlink" title="TCP"></a>TCP</h3><p>TCP工作在运输层，为应用层提供通信功能，是面向连接的传输控制协议。在传送数据之前必须要先建立连接，数据传送结束后要释放连接，不提供广播和多播功能，连接的建立需要通过“三次握手”，断开连接需要通过“4次握手”。<br>通俗解释三次握手：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">主机A--我要给你发数据，同意吗？syn/seq--&gt;主机B</span><br><span class="line">主机A&lt;--同意，你发吧ack/syn--主机B</span><br><span class="line">主机A--我收到答复，我要传数据了ack--&gt;主机B</span><br><span class="line">SYN Flood攻击发生在第二次握手，让主机B一直处于等待状态，直到超时</span><br></pre></td></tr></table></figure></p>
+<p>通俗解释四次握手：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">主机A--FIN=1,数据传送完成,关闭--&gt;主机B</span><br><span class="line">主机A&lt;--ACK=1,收到--主机B</span><br><span class="line">主机A&lt;--我的数据接收完成，FIN=1，关闭--主机B</span><br><span class="line">主机A--收到，关闭，ACK=1--&gt;主机B</span><br></pre></td></tr></table></figure></p>
+<h3 id="UDP"><a href="#UDP" class="headerlink" title="UDP"></a>UDP</h3><p>UDP工作在运输层，是一种无连接的用户数据报协议，UDP在传送数据之前不需要先建立连接，使用尽最大努力交付，不保证可靠交付，比TCP使用更少的资源</p>
+<h2 id="路由选择协议"><a href="#路由选择协议" class="headerlink" title="路由选择协议"></a>路由选择协议</h2><h3 id="路由信息协议RIP"><a href="#路由信息协议RIP" class="headerlink" title="路由信息协议RIP"></a>路由信息协议RIP</h3><p>路由信息协议RIP是内部网关协议中最先得到广泛应用的，是一种分布式基于距离向量的路由选择协议，最大特点是简单。RIP协议要求网络中的每一个路由器都要维护从它自己到其他每个目的网络的距离记录。<br>从一路由器到直接连接的网络的距离定义为1,到非直接项链的网络的距离定义为所经过的路由器数加1,距离也称为跳数。<br>RIP允许一条路径最多包含15个路由器，距离达到16就相当于不可达，RIP协议适应于小型网络。<br>路由器R1到N1、N2网络的距离是1,到N3的距离是2,到N4的距离是3<br>N1—R1—N2—R2—N3—R3—N4<br>RIP协议中，路由器仅和相邻的路由器交换信息，交换的信息是当前本路由器中所知道的全部信息(自己的路由表)，信息的交换有固定的时间间隔。<br>路由表中最重要的信息：到某个网络的最短距离，以及应经过的下一跳地址。路由表更新的原则是找出到每个目的网络的最短距离，这种算法被称为距离向量算法。<br>RIP协议存在一个问题：网络出现故障时，要经过比较长的时间才能将此信息传递到所有路由器。好消息传得快，坏消息传的慢。</p>
+<h3 id="开放最短路径优先协议OSPF"><a href="#开放最短路径优先协议OSPF" class="headerlink" title="开放最短路径优先协议OSPF"></a>开放最短路径优先协议OSPF</h3><p>与RIP协议相比，OSPF协议具有以下特点：</p>
+<ul>
+<li>向本自治系统中的所有路由器发送信息，采用的是洪泛法(RIP是相邻的路由器)</li>
+<li>发送的信息是与本路由器相邻的所有路由器的链路状态(RIP是到所有网络的)</li>
+<li>只有当链路状态发生变化时，路由器才用洪泛法发送消息(RIP是固定间隔)<br>OSPF协议中，每个路由器都由一个链路状态数据库，这个数据库就是全网的拓扑结构，这个拓扑结构在全网范围内是一致的(链路状态数据库的同步)。<br>OSPF将一个自治系统再划分为若干个更小的范围，叫区域，每个区域由一个32bit的区域标识符，主干区域标识符用0.0.0.0表示。<br>OSPF不使用UDP传输，直接用IP数据报传送，工作在网络层。</li>
+</ul>
+<h2 id="FW-IDS-WAF-IPS"><a href="#FW-IDS-WAF-IPS" class="headerlink" title="FW/IDS/WAF/IPS"></a>FW/IDS/WAF/IPS</h2><p>防火墙是一种隔离技术，对流经的网络通信进行扫描，工作在网络层，用于过滤ip和协议类型，拦截低层攻击行为，但对应用层攻击无能为力。一般部署在外联出口或区域性出口位置，对内外流量进行安全隔离。<br>IDS入侵检测系统，基本以旁路为主，特点是不阻断任何网络访问，主要以提供报告和是后监督为主。<br>IPS入侵检测系统，解决了无法阻断的问题，基本一在线模式为主，系统提供多个端口，以头哦名模式工作，在防火墙中也会由提供该功能的产品，其特点是可以分析到数据包的内容，解决传统防火墙只能工作在4层以下的问题，IPS定义多种攻击模式，并通过模式匹配去阻断非法访问，缺点是不能主动学习攻击方式，对于不能识别的攻击模式，默认会允许。<br>IPS会被串联在主干路上，对内外网异常流量进行监控处理。<br>WAF是web应用防护系统，工作在应用层，一般放置在对外提供网站服务的DMZ区域或数据中心服务区域，位置应尽量靠近web服务器。<br>工作模式有：透明代理(网桥模式)、反向代理、路由代理、端口镜像，前三种称为在线模式，需要将WAF串行部署在web服务器前端，用于检测并阻断异常流量;端口镜像称为离线模式，将WAF旁路在web服务器上游的交换机中，只用于检测异常流量。</p>
+<ul>
+<li>透明模式(网桥模式)<br>web客户端访问服务器时，连接请求被WAF拦截和监控，将会话分成2段，并基于桥模式进行转发，客户端感知不到WAF的存在，还可以开启基于硬件的Bypass功能，在WAF设备故障或掉电时不影响网络流量。在该模式下，所有流量都需要经过WAF，对WAF性能由要求，同时无法实现服务器负载均衡功能。</li>
+<li>反向代理模式<br>反向代理是将真实服务器地址映射到反向代理服务器上，客户端访问的就是WAF，在收到请求后WAF再将请求转发给后端的真实服务器，可以实现负载均衡。使用该模式需要在WAF中配置IP映射关系，WAF设备的地址和路由。</li>
+<li>路由代理模式<br>与网桥模式的区别是，工作在路由转发模块而非网桥模式，其他都一样，也不支持负载均衡。该模式需要为WAF的转发接口配置IP地址及路由，在该模式下可以直接作为web服务器的网站，但是存在单点故障问题，同时负责转发所有的流量。</li>
+<li>端口镜像模式<br>使用交换机的端口镜像功能，WAF只进不出，只对http流量进行监控和报警，对网络不会由任何影响。</li>
+</ul>
+<h2 id="IPsec"><a href="#IPsec" class="headerlink" title="IPsec"></a>IPsec</h2><p>IPSec是互联网安全协议，由2类协议组成：AH协议和ESP协议。</p>
+<ul>
+<li>AH协议<br>可以同时提供数据完整性确认、数据来源确认、防重方等安全特性，常用摘要算法：MD5、SHA1</li>
+<li>ESP协议<br>AH协议使用较少，因为其无法提供数据加密，所有数据传输时以明文传输，而ESP提供数据加密。<br>VPN是IPSec的一种应用方式，提供site-to-site、end-to-site、end-to-end应用场景<br>IPSec提供传输模式和隧道模式2种封装模式：</li>
+<li>传输模式在AH、ESP处理前后IP头部保持不变，主要用于end-to-end场景;</li>
+<li>隧道模式在AH、ESP处理后再封装了一个外网ip头，主要用于site-to-site场景;</li>
+<li>隧道模式可以用于任何场景，传输模式只能用于end-to-end<br>在使用IPSec加密数据包前，需要限建立一个IPSec的SA，可以手工建立也可以使用IKE(密钥交换协议)建立。<br>IKE密钥交换协议属于混合协议，由ISAKMP协议和OAKLEY/SKEME组成，IKE与ISAKMP不同之处：IKE真正定义了一个密钥交换过程，ISAKMP只是定义了一个通用的可以被任何密钥交换协议使用的框架。<br><strong>IPSec VPN构架过程：</strong></li>
+</ul>
+<ol>
+<li>开始会话，建立连接</li>
+<li>ISAKMP/IKE阶段一：协商阶段二的SA，建立IKE本身的安全信道</li>
+<li>ISAKMP/IKE阶段二：协商IPSec的SA，通过阶段一建立的安全信道交换IPSec通信中使用的SA</li>
+<li>数据连接建立</li>
+</ol>
+<p>————阶段一————–<br>有2种工作模式：主模式和积极模式，使用UDP:500端口</p>
+<ul>
+<li>主模式：3步双向交互过程，任何实体信息都可以免受攻击<ul>
+<li>SA交换：协商双方安全策略的过程</li>
+<li>密钥交换：位第一对消息中所协商的算法生成密钥，通过DH密钥交换算法生成公钥，并交换公钥及随机数(防止重发攻击)</li>
+<li>ID交换及验证：进行身份验证和对整个SA交换进行验证</li>
+</ul>
+</li>
+<li>积极模式：3次交换协商密钥和进行验证，速度快，但信息实体是明文<br>————阶段二————–</li>
+<li>快速模式<br>协商IPSec SA使用的安全参数，创建IPSec SA使用AH或ESP来加密数据流</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2019/07/10/knownleage_network.html" title="网络基础知识学习笔记">https://kim1024.github.io/2019/07/10/knownleage_network.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/网络基础/" rel="tag"><i class="fa fa-tag"></i> 网络基础</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/06/30/dbproxy.html" rel="next" title="美团云DBProxy学习笔记">
+                  <i class="fa fa-chevron-left"></i> 美团云DBProxy学习笔记
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/07/17/kvm-snapshot.html" rel="prev" title="KVM虚拟化技术的内置快照和外置快照">
+                  KVM虚拟化技术的内置快照和外置快照 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-IP和OSI模型"><span class="nav-number">1.</span> <span class="nav-text">TCP/IP和OSI模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP-IP"><span class="nav-number">1.1.</span> <span class="nav-text">TCP/IP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OSI"><span class="nav-number">1.2.</span> <span class="nav-text">OSI</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-UDP"><span class="nav-number">2.</span> <span class="nav-text">TCP/UDP</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP"><span class="nav-number">2.1.</span> <span class="nav-text">TCP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP"><span class="nav-number">2.2.</span> <span class="nav-text">UDP</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#路由选择协议"><span class="nav-number">3.</span> <span class="nav-text">路由选择协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#路由信息协议RIP"><span class="nav-number">3.1.</span> <span class="nav-text">路由信息协议RIP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#开放最短路径优先协议OSPF"><span class="nav-number">3.2.</span> <span class="nav-text">开放最短路径优先协议OSPF</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#FW-IDS-WAF-IPS"><span class="nav-number">4.</span> <span class="nav-text">FW/IDS/WAF/IPS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IPsec"><span class="nav-number">5.</span> <span class="nav-text">IPsec</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>

@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN,en,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/32-icons.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/16-icons.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":"mac"},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: true,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="概述 在xfs文件系统中，使用quota可以针对用户、群组、文件夹进行磁盘限额; 在限额的操作中，使用最多的命令就是xfs_quota -x -c ; quota的限制是针对文件系统的，跨文件系统是无法实现quota的; quota的使用应该尽量避免在根目录下使用，如果前期为规划文件系统，后期需要对某个目录进行限额，可以将原目录完整的移动到/home下，然后利用ln -s /home/dir /o">
+<meta name="keywords" content="XFS,quota,磁盘限额">
+<meta property="og:type" content="article">
+<meta property="og:title" content="XFS文件系统中quota的使用">
+<meta property="og:url" content="https://kim1024.github.io/2018/11/27/quota-with-xfs.html">
+<meta property="og:site_name" content="95号笔记">
+<meta property="og:description" content="概述 在xfs文件系统中，使用quota可以针对用户、群组、文件夹进行磁盘限额; 在限额的操作中，使用最多的命令就是xfs_quota -x -c ; quota的限制是针对文件系统的，跨文件系统是无法实现quota的; quota的使用应该尽量避免在根目录下使用，如果前期为规划文件系统，后期需要对某个目录进行限额，可以将原目录完整的移动到/home下，然后利用ln -s /home/dir /o">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/26/FAVyan.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/26/FAVgP0.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/26/FAV4r4.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/26/FAtz3F.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/26/FANiH1.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/26/FABbxf.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/26/FADALF.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/26/FADTw4.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/26/FADXSx.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/11/27/FEFTzD.png">
+<meta property="og:updated_time" content="2019-10-06T02:53:16.681Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="XFS文件系统中quota的使用">
+<meta name="twitter:description" content="概述 在xfs文件系统中，使用quota可以针对用户、群组、文件夹进行磁盘限额; 在限额的操作中，使用最多的命令就是xfs_quota -x -c ; quota的限制是针对文件系统的，跨文件系统是无法实现quota的; quota的使用应该尽量避免在根目录下使用，如果前期为规划文件系统，后期需要对某个目录进行限额，可以将原目录完整的移动到/home下，然后利用ln -s /home/dir /o">
+<meta name="twitter:image" content="https://s1.ax1x.com/2018/11/26/FAVyan.png">
+  <link rel="canonical" href="https://kim1024.github.io/2018/11/27/quota-with-xfs">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>XFS文件系统中quota的使用 | 95号笔记</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">95号笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">温故而知新</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">129</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+      
+      
+        
+      
+        
+          
+        
+      
+        
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">60</span></a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">88</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+    
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://kim1024.github.io/2018/11/27/quota-with-xfs.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kim">
+      <meta itemprop="description" content="笔记,随笔,杂谈">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="95号笔记">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">XFS文件系统中quota的使用
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2018-11-27 09:31:25" itemprop="dateCreated datePublished" datetime="2018-11-27T09:31:25+08:00">2018-11-27</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-10-06 10:53:16" itemprop="dateModified" datetime="2019-10-06T10:53:16+08:00">2019-10-06</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/XFS/" itemprop="url" rel="index"><span itemprop="name">XFS</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2018/11/27/quota-with-xfs.html" class="post-meta-item leancloud_visitors" data-flag-title="XFS文件系统中quota的使用" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>0</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>1 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><ul>
+<li>在xfs文件系统中，使用quota可以针对用户、群组、文件夹进行磁盘限额;</li>
+<li>在限额的操作中，使用最多的命令就是<code>xfs_quota -x -c</code> ;</li>
+<li>quota的限制是针对文件系统的，跨文件系统是无法实现quota的;</li>
+<li>quota的使用应该尽量避免在根目录下使用，如果前期为规划文件系统，后期需要对某个目录进行限额，可以将<strong>原目录完整的移动到/home下，然后利用<code>ln -s /home/dir /old/dir</code>创建一个软连接，在/home下对文件夹进行限额</strong></li>
+</ul>
+<h2 id="操作"><a href="#操作" class="headerlink" title="操作"></a>操作</h2><ol>
+<li><p>文件系统</p>
+<ul>
+<li>xfs文件系统支持quota核心功能，在使用quota限额时，避免在根目录下使用</li>
+<li>查看home分区的文件系统信息<code>df -hT /home</code></li>
+</ul>
+</li>
+<li><p>修改ftab<br>-xfs文件系统的quota在挂载时就已经宣告，无法使用remount来重新启动quota功能，因此要写入fstab中，或者在初始故在过程中加入这个项目，否则不会生效;</p>
+<ul>
+<li>修改fstab文件<code>cp /etc/fstab /etc/fstab.old &amp;&amp; vi /etc/fstab</code>,找到home分区，在第四段内容后添加<code>usrquota,grpquota</code>2项内容;需要注意的是：在修改完成后需要测试，若存在错误需要立刻处理，否则不能开机;在卸载分区前，需要将一般账号全部退出，否则不能卸载，<code>who</code>查看当前在线的用户，<code>pkill -kill -t pts/n</code>命令强制用户离线。</li>
+</ul>
+</li>
+</ol>
+<a id="more"></a>
+<p>  <img src="https://s1.ax1x.com/2018/11/26/FAVyan.png" alt="vi-fstab"></p>
+<pre><code>- 针对quota限额的使用有3项：
+  1. usrquota:针对使用者账号
+  2. grpquota:针对群组
+  3. prjquota:针对单一目录，但是**不能与grpquota同时存在**
+</code></pre><ol start="3">
+<li><p>重新挂载分区</p>
+<ul>
+<li><code>umount /home &amp;&amp; mount -a</code></li>
+<li><code>mount | grep home</code> # 查看home分区的挂载信息</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/26/FAVgP0.png" alt="mount-grep"></p>
+</li>
+<li><p>使用xfs_quota命令查看quota报告</p>
+<ul>
+<li><p>xfs_quota命令格式<code>xfs_quota -x -c &quot;comm&quot; [mount_dir]</code></p>
+<ul>
+<li><code>-x</code>专家模式，只有使用了该参数，才能使用<code>-c</code>指定命令</li>
+<li><p><code>-c</code>指定命令</p>
+<ul>
+<li><code>print</code> 列出目前主机内的文件系统参数等数据</li>
+<li><code>df</code> 与系统的<code>df</code>命令一样</li>
+<li><code>report</code> 列出目前的quota项目，有ugr(user/group/project)及bi等数据</li>
+<li><code>state</code> 说明目前支持quota的文件系统的信息</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/26/FAV4r4.png" alt="xfs_quota-report"></p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>限额的设置</p>
+</li>
+</ol>
+<ul>
+<li><p>限额用户和用户组</p>
+<ul>
+<li>设定系统中test用户的限额为200M/300M,群组共500M/600M的容量，同时grace time为7天</li>
+<li>限额的命令格式<code>xfs_quota -x -c &quot;limit [-ug] b[soft|hard]=N i[soft|hard]=N name&quot;</code> <code>xfs_quota -x -c &quot;timer [-ug] [-bir] Ndays&quot;</code><ul>
+<li><code>limit</code> 指定限定的项目，可以针对user和group限制</li>
+<li><code>bsoft|bhard</code> <code>isoft|ihard</code> block(磁盘容量)和inode(文件数量)的hard与soft值 通常hard要比soft限额高，hard表示使用者的用量绝对不会超过这个限额;soft表示在使用者低于限额可以正常使用，若高于soft低于hard，每次登陆系统时，系统会主动发送磁盘即将爆满的警告，并且会有一个宽限时间grace time，如果在grace time时间内不进行任何磁盘关联，soft会取代hard值，达到hard值后，磁盘使用权将会被锁住无法新增文件</li>
+</ul>
+</li>
+<li><code>xfs_quota -x -c &quot;limit -u bsoft=200M bhard=300M test&quot; /home</code> # 限定用户test</li>
+<li><code>xfs_quota -x -c &quot;limit -g bsoft=500M bhard=600M test&quot; /home</code> # 限定用户组test</li>
+<li><code>xfs_quota -x -c &quot;timer -u -b 7days&quot;</code> # 设定用户宽限时间为7天</li>
+<li><code>xfs_quota -x -c &quot;timer -u -b 7days&quot;</code> # 设定用户组宽限时间为7天</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/26/FAtz3F.png" alt="xfs_quota-limit&amp;timer"></p>
+<ul>
+<li>分别测试<code>bsoft|bhard|grace time</code>，使用<code>dd</code>命令在用户<code>test</code>home下写入220M数据，查看quota报告</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/26/FANiH1.png" alt="xfs_quota-time-test"></p>
+</li>
+<li><p>限额目录</p>
+<ul>
+<li>在使用限额目录功能前，需要取消group的限额，取消<code>grpquota</code>加入<code>prjquota</code></li>
+<li>限定用户test家目录下web文件夹的限额400M/500M</li>
+<li>首先取消grpquota,添加prjquota<ul>
+<li><code>vi /etc/fstab</code></li>
+</ul>
+</li>
+<li><p>重载分区</p>
+<ul>
+<li><code>umount /home &amp;&amp; mount -a</code></li>
+<li><code>mount | grep /home</code> # 查看home分区的挂载信息</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/26/FABbxf.png" alt="mount-grep-home-prjquota"></p>
+<ul>
+<li><code>xfa_quota -x -c &quot;state&quot; /home</code> # 查看quota状态，grpquota已经关闭</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/26/FADALF.png" alt="grpquota-off"></p>
+</li>
+<li><p>限额目录需要指定<strong>项目名称和识别码</strong>，项目名称webquota,识别码26</p>
+<ul>
+<li>指定项目识别码与对应目录<code>echo &quot;26:/home/test/web&quot; &gt;&gt; /etc/projects</code></li>
+<li>指定项目识别码与名称 <code>echo &quot;webquota:26&quot; &gt;&gt; /etc/projid</code></li>
+</ul>
+</li>
+<li><p>初始化项目名称</p>
+<ul>
+<li><code>xfs_quota -x -c &quot;project -s webquota&quot;</code></li>
+<li><code>xfs_quota -x -c &quot;print&quot; /home</code></li>
+<li><code>xfs_quota -x -c &quot;report -pbih&quot; /home</code></li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/26/FADTw4.png" alt="print webquota project"></p>
+</li>
+<li><p>设置项目限额</p>
+<ul>
+<li><code>xfs_quota -x -c &quot;limit -p bsoft=400M bhard=500M webquota&quot; /home</code></li>
+<li><code>xfs_quota -x -c &quot;report -pbih&quot; /home</code></li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/26/FADXSx.png" alt="projectlimit"></p>
+</li>
+<li><p>在文件夹web下写入450M的数据，测试quota的project</p>
+<ul>
+<li><code>dd if=/dev/zero of=./project.img bs=1M count=450</code></li>
+</ul>
+<p><img src="https://s1.ax1x.com/2018/11/27/FEFTzD.png" alt="project-show"></p>
+</li>
+<li><p>如果需要限定其他目录的磁盘使用，只需要创建一个项目并将该项目初始化，再执行项目限额的操作即可</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="xfs-quota的管理"><a href="#xfs-quota的管理" class="headerlink" title="xfs_quota的管理"></a>xfs_quota的管理</h2><h3 id="常用的管理命令"><a href="#常用的管理命令" class="headerlink" title="常用的管理命令"></a>常用的管理命令</h3><ol>
+<li><code>disable</code> 暂时取消quota的限制，系统还在计算quota，只是没有管制;</li>
+<li><code>enabled</code> 恢复到正常的管理状态，在使用了<code>disable</code>后可以使用该命令恢复到正常的状态;</li>
+<li><code>off</code>     完全关闭quota的限制，使用了该命令后只有重载文件系统，才能重新启用quota;</li>
+<li><code>remove</code>  杂子<code>off</code>状态才可以使用该命令，如果要取消webquota项目的限制,可以直接使用<code>remove -p</code>,需要注意的是，使用该命令会<strong>移除所有项目的限制</strong></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div></div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="Kim 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Kim</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://kim1024.github.io/2018/11/27/quota-with-xfs.html" title="XFS文件系统中quota的使用">https://kim1024.github.io/2018/11/27/quota-with-xfs.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/XFS/" rel="tag"><i class="fa fa-tag"></i> XFS</a>
+            
+              <a href="/tags/quota/" rel="tag"><i class="fa fa-tag"></i> quota</a>
+            
+              <a href="/tags/磁盘限额/" rel="tag"><i class="fa fa-tag"></i> 磁盘限额</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2018/11/24/lvm-thin-pool.html" rel="next" title="LVM-thin-Volume学习和基础使用">
+                  <i class="fa fa-chevron-left"></i> LVM-thin-Volume学习和基础使用
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2018/11/27/raid-with-xfs.html" rel="prev" title="软件磁盘阵列在xfs文件系统中的使用">
+                  软件磁盘阵列在xfs文件系统中的使用 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#操作"><span class="nav-number">2.</span> <span class="nav-text">操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#xfs-quota的管理"><span class="nav-number">3.</span> <span class="nav-text">xfs_quota的管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#常用的管理命令"><span class="nav-number">3.1.</span> <span class="nav-text">常用的管理命令</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Kim</p>
+  <div class="site-description" itemprop="description">笔记,随笔,杂谈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">88</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">60</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kim</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">200k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:02</span>
+</div>
+
+        
+
+
+
+
+
+
+  
+  <script>
+  function leancloudSelector(url) {
+    return document.getElementById(url).querySelector('.leancloud-visitors-count');
+  }
+  if (CONFIG.page.isPost) {
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = visitors.getAttribute('id').trim();
+      var title = visitors.getAttribute('data-flag-title').trim();
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .then(response => response.json())
+              .then(() => {
+                leancloudSelector(url).innerText = counter.time + 1;
+              })
+            
+              .catch(error => {
+                console.log('Failed to save visitor count', error);
+              })
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  } else {
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return element.getAttribute('id').trim();
+      });
+
+      Counter('get', `/classes/Counter?where=${JSON.stringify({ url: { '$in': entries } })}`)
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length === 0) {
+            document.querySelectorAll('.leancloud_visitors .leancloud-visitors-count').forEach(element => {
+              element.innerText = 0;
+            });
+            return;
+          }
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.url;
+            var time = item.time;
+            leancloudSelector(url).innerText = time;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = leancloudSelector(url);
+            if (element.innerText == '') {
+              element.innerText = 0;
+            }
+          }
+        })
+        .catch(error => {
+          console.log('LeanCloud Counter Error', error);
+        });
+    }
+  }
+
+  fetch('https://app-router.leancloud.cn/2/route?appId=F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz')
+    .then(response => response.json())
+    .then(({ api_server }) => {
+      var Counter = (method, url, data) => {
+        return fetch(`https://${api_server}/1.1${url}`, {
+          method: method,
+          headers: {
+            'X-LC-Id': 'F2IOqVUgHuxV4J6J4NOhBIuT-gzGzoHsz',
+            'X-LC-Key': 'L6TvO9IiE8BOHY9RWH40oSmO',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        const localhost = /http:\/\/(localhost|127.0.0.1|0.0.0.0)/;
+        if (localhost.test(document.URL)) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/muse.js?v=7.4.1"></script>
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/nipsilon.model.json"},"display":{"position":"right","width":100,"height":250},"mobile":{"show":false},"log":false});</script></body>
+</html>
